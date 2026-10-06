@@ -6,7 +6,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
 ## User flow (step by step)
 0. **Main page** (`index.html`, shows first): the design from the old `main-page.html`: big "LILIES FOR KAT" word, a swaying bouquet that changes colors, falling petals. Two pill buttons side by side (on phones, near the top under the nav): **Make a bouquet** (filled cream, opens `builder.html` at step 1) and **My bouquets** (outlined cream, opens the saved bouquets list). The nav links do the same things. The site is a gift for Kat, whose favorite flower is the lily.
 1. **Lilies**: pick lily colors (white, pink stargazer, orange, yellow, blush pink) and how many of each.
-2. **Filler flowers**: add things tucked between the lilies: baby's breath, eucalyptus, small daisies, lavender. Optional.
+2. **Filler flowers**: add things around and between the lilies: baby's breath, eucalyptus, small daisies, lavender. Optional. Max 6 of each.
 3. **Wrapping**: pick a wrapping paper color and a ribbon color.
 4. **Finishing touches**: give the bouquet a name and write a card message. Both optional.
 5. **Final reveal**: show the finished bouquet drawing, big, with its name and card.
@@ -18,10 +18,15 @@ A website where people build a custom lily bouquet step by step, then see it as 
 ## Rules
 - A bouquet must always have at least 1 lily. Next is disabled on step 1 until there is one.
 - Lilies are the only main flower. Other flowers are fillers.
-- Fillers go between the lilies, in the gaps, and are drawn behind the lilies so they peek out and never cover a bloom. Each filler has its own job: baby's breath = small clusters poking just above the lilies, lavender = thin spikes between lilies, daisies = small, in the gaps, slightly lower, eucalyptus = mostly at the back and edges, framing the bouquet.
-- All stems (lilies and fillers) come together at one point, where the wrapping gathers them.
+- The bouquet must look clean and organized, and every flower can be seen. Lilies sit in neat rings like a rounded dome: one in the middle, then a ring of 6, then an outer ring of up to 11. Front lilies are a bit lower and bigger, back ones a bit higher and smaller. They may overlap a little at the edges, but most of each bloom always shows. Lilies are added in left/right pairs so it stays balanced.
+- Fillers go in clear zones (all drawn behind the lilies, never covering a bloom), roughly symmetrical left to right:
+  - eucalyptus: a neat frame around the back and sides
+  - lavender: a few spikes spaced evenly along the back, poking above the lilies
+  - baby's breath: small puffs tucked into the gaps on the edge, just peeking out
+  - daisies: a neat row along the front lower edge
+- All stems (lilies and fillers) are tied into one tight bundle at the bottom, where the wrapping gathers them. Stems curve neatly into it and are trimmed flat. No long messy stems.
 - Every flower keeps its own spot. Adding one flower must not rearrange the others.
-- Slot system: lilies take their spots first. Every filler stem then gets its OWN free slot (no two fillers ever share one). Slots are spread over the whole bouquet dome with a golden-angle spiral, and handed out round-robin over the filler kinds (lavender, baby's breath, daisies, eucalyptus, lavender, ...) so each kind is spread out and the kinds mix evenly. Each stem gets a small tilt and size difference from a seeded (repeatable) random, so the bouquet never reshuffles on a click.
+- The whole bouquet scales down a little as flowers are added so it always fits. Small random tilts and size differences use a seeded (repeatable) random, so the bouquet never reshuffles on a click.
 - Max 18 lilies.
 
 ## Final reveal screen
