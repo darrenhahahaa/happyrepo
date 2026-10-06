@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Happy Lilies: Drawing Gallery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono&family=Unbounded:wght@300&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         /* Test page only: a wrapping grid of cards, one per drawing */
         .gallery { max-width: 960px; margin: 0 auto; padding: 16px; }
-        .gallery h1, .gallery h2 { text-align: center; }
+        .gallery h1, .gallery h2 { text-align: center; font-family: var(--display); font-weight: 300; text-shadow: 0 1px 3px rgba(90, 50, 80, 0.5); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
         .card { background: var(--card); border-radius: 20px; padding: 12px; text-align: center;
                 box-shadow: 0 4px 12px rgba(200, 150, 160, 0.2); }
         .card svg { width: 100%; height: 160px; }
-        .card p { margin: 6px 0 0; font-size: 0.9rem; }
+        .card p { margin: 6px 0 0; font-size: 0.9rem; color: var(--mauve); }
     </style>
 </head>
 <body>

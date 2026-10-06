@@ -31,15 +31,18 @@ A website where people build a custom lily bouquet step by step, then see it as 
 
 ## Look and feel
 - Cute, illustrated, hand-drawn style. Soft colors, rounded shapes.
+- The whole site matches the main page: pink-mauve gradient background (#B78AA6 to #D2A9C3 to #E6C6D6), cream text (#F8F1C4), headings in Unbounded (light, 300), small text and labels in Space Mono, thin cream divider lines, small monospace labels like "Step 2 of 5", and rounded pill buttons (filled cream with mauve text = main action, outlined cream = second action). Both fonts load from Google Fonts.
+- Text must stay easy to read: on the builder, text sits on mauve cards (`--panel`), not straight on the light part of the gradient.
+- Use the shared classes in `style.css` for anything new (final reveal, My bouquets, form fields): `.btn` with `.btn-fill` or `.btn-line`, and the card, heading and divider styles already there.
 - Bouquet drawn with SVG in code. No image files, no AI-generated images.
 - Works well on phones.
 
 ## Tech
 - Plain HTML, CSS, and JavaScript. No frameworks, no build step, no npm.
 - Files:
-  - `index.html`: the main page. It has its own styles and script inline (so it keeps its own look: cream text on a mauve gradient, Space Mono and Unbounded fonts) and does not use `style.css` or `script.js`. It also holds the "My bouquets" panel.
-  - `builder.html`: the step-by-step bouquet builder. Uses `style.css`, `flowers.js` and `script.js`.
-  - `style.css`, `script.js`: the builder's styles and logic.
+  - `index.html`: the main page. It has its own styles and script inline and does not use `style.css` or `script.js`. It also holds two panels that open from the address: "My bouquets" (`#saved`) and "A note for Kat" (`#note`, a card with her note, exact words fixed: do not edit the wording).
+  - `builder.html`: the step-by-step bouquet builder, styled to match the main page. Uses `style.css`, `flowers.js` and `script.js`.
+  - `style.css`, `script.js`: the builder's styles (the main page look, see Look and feel) and logic. `gallery.html` uses `style.css` too.
   - `flowers.js`: all SVG drawings for the builder: lilies, fillers, wrapping, ribbon.
   - `gallery.html`: test page that shows every drawing.
 - Hosted on GitHub Pages from the `main` branch root, so all file paths must be relative.

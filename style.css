@@ -1,11 +1,15 @@
-/* Colors in one place so they're easy to change */
+/* Look of the bouquet builder (builder.html). It matches the main page (index.html):
+   pink-mauve gradient, cream text, Unbounded headings, Space Mono small text,
+   thin cream lines and pill buttons. The fonts are loaded in the page's <head>. */
+
 :root {
-    --bg: #fff7f3;
-    --card: #ffffff;
-    --text: #5a4a4a;
-    --accent: #f4a6b8;
-    --accent-dark: #e2849b;
-    --soft: #f3e3e3;
+    --cream: #F8F1C4;
+    --mauve: #8F5B80;                       /* text on cream buttons; also the card color */
+    --panel: rgba(143, 91, 128, 0.92);      /* cards: mauve, so cream text stays easy to read */
+    --line: rgba(248, 241, 196, 0.55);      /* thin cream divider lines */
+    --card: #FFFAF0;                        /* light cards (used by gallery.html) */
+    --mono: "Space Mono", ui-monospace, Menlo, monospace;
+    --display: "Unbounded", "Arial Black", system-ui, sans-serif;
 }
 
 * {
@@ -14,89 +18,81 @@
 
 body {
     margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Trebuchet MS", "Comic Sans MS", sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #B78AA6 0%, #D2A9C3 55%, #E6C6D6 100%);
+    color: var(--cream);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+a {
+    color: inherit;
+}
+
+:focus-visible {
+    outline: 2px solid var(--cream);
+    outline-offset: 3px;
+}
+
+/* Makes the hidden attribute always win, even on elements that set display */
+[hidden] {
+    display: none !important;
 }
 
 /* One centered column, good for phones */
 .app {
     max-width: 480px;
     margin: 0 auto;
-    padding: 16px;
+    padding: 16px 16px 32px;
 }
 
+/* ---------- Header: home link, title, step label ---------- */
 .app-header {
+    margin-bottom: 16px;
+    padding: 14px 18px 0;
     text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+}
+
+.home-link {
+    display: block;
+    text-align: left;
+    font-size: 12px;
+    text-decoration: none;
+}
+
+.home-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 .app-header h1 {
-    margin: 8px 0 4px;
+    margin: 8px 0 14px;
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(22px, 7vw, 30px);
+    line-height: 1.15;
 }
 
+/* Small monospace label with a thin line above it, like the main page's top line */
 .step-label {
-    margin: 0 0 16px;
-    font-size: 0.95rem;
-    opacity: 0.8;
-}
-
-/* Each step is a rounded white card; hidden unless it's the current one */
-.step {
-    display: none;
-    background: var(--card);
-    border-radius: 24px;
-    padding: 20px;
-    min-height: 240px;
-    box-shadow: 0 4px 12px rgba(200, 150, 160, 0.2);
-}
-
-.step.active {
-    display: block;
-}
-
-/* Back / Next buttons side by side */
-.nav-buttons {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.nav-buttons button {
-    flex: 1;
-    padding: 14px;
-    font-size: 1rem;
-    font-family: inherit;
-    color: white;
-    background: var(--accent);
-    border: none;
-    border-radius: 999px;
-    cursor: pointer;
-}
-
-.nav-buttons button:hover:not(:disabled) {
-    background: var(--accent-dark);
-}
-
-/* Greyed-out look for disabled buttons */
-.nav-buttons button:disabled {
-    background: var(--soft);
-    color: #b9a8a8;
-    cursor: not-allowed;
-}
-
-/* Used by script.js to hide a button (Next on the last step) */
-.hidden {
-    visibility: hidden;
+    margin: 0;
+    padding: 10px 0 12px;
+    border-top: 1px solid var(--line);
+    font-size: 11px;
+    letter-spacing: 0.04em;
 }
 
 /* ---------- Live preview ---------- */
 .preview {
-    background: var(--card);
-    border-radius: 24px;
     margin-bottom: 16px;
     padding: 8px;
-    box-shadow: 0 4px 12px rgba(200, 150, 160, 0.2);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 24px;
 }
 
 .preview svg {
@@ -112,7 +108,7 @@ body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    opacity: 0.6;
+    font-size: 13px;
 }
 
 /* Hidden on the reveal step. Not display:none, so the drawings' colors keep working. */
@@ -121,21 +117,51 @@ body {
     padding: 0;
     margin: 0;
     overflow: hidden;
-    box-shadow: none;
+    border: none;
 }
 
-/* ---------- Step 1: lily picker ---------- */
+/* ---------- Steps ---------- */
+/* Each step is a mauve card; hidden unless it's the current one */
+.step {
+    display: none;
+    min-height: 240px;
+    padding: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+}
+
+.step.active {
+    display: block;
+}
+
+.step h2 {
+    margin: 0 0 8px;
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: clamp(16px, 5vw, 20px);
+    line-height: 1.25;
+}
+
+:where(.step) p {
+    margin: 0 0 12px;
+}
+
 .hint {
-    margin-top: 0;
-    opacity: 0.8;
+    font-size: 13px;
 }
 
+/* ---------- Step 1 and 2: pickers ---------- */
 .lily-row {
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 8px 0;
-    border-bottom: 1px dashed var(--soft);
+    border-bottom: 1px solid var(--line);
+}
+
+.lily-row:last-of-type {
+    border-bottom: none;
 }
 
 .lily-thumb {
@@ -151,6 +177,7 @@ body {
 
 .lily-name {
     flex: 1;
+    font-size: 13px;
 }
 
 .counter {
@@ -163,56 +190,133 @@ body {
     min-width: 1.5em;
     text-align: center;
     font-weight: bold;
-    font-size: 1.1rem;
+    font-size: 16px;
 }
 
 /* Round - and + buttons (big enough to tap on a phone) */
 .count-btn {
-    width: 40px;
-    height: 40px;
-    font-size: 1.4rem;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-family: var(--mono);
+    font-size: 20px;
     line-height: 1;
-    font-family: inherit;
-    color: white;
-    background: var(--accent);
-    border: none;
+    color: var(--cream);
+    background: transparent;
+    border: 2px solid var(--cream);
     border-radius: 50%;
     cursor: pointer;
+    transition: background 0.2s ease;
 }
 
 .count-btn:hover:not(:disabled) {
-    background: var(--accent-dark);
+    background: rgba(248, 241, 196, 0.22);
 }
 
 .count-btn:disabled {
-    background: var(--soft);
-    color: #b9a8a8;
+    opacity: 0.35;
     cursor: not-allowed;
 }
 
 .lily-total {
     margin: 12px 0 0;
     font-weight: bold;
+    font-size: 13px;
     text-align: center;
 }
 
 .lily-message {
     margin: 4px 0 0;
     min-height: 1.2em;
+    font-size: 12px;
     text-align: center;
-    font-size: 0.9rem;
-    opacity: 0.8;
 }
 
-/* Makes the hidden attribute always win, even on elements that set display */
-[hidden] {
-    display: none !important;
+/* ---------- Buttons: the same pill style as the main page ---------- */
+.btn,
+.nav-buttons button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 26px;
+    border: 2px solid var(--cream);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
-/* Small link back to the main page */
-.home-link {
-    display: inline-block;
-    margin-top: 4px;
-    color: var(--accent-dark);
-    font-size: 0.95rem;
+/* Filled cream with mauve text */
+.btn-fill,
+#next-btn {
+    background: var(--cream);
+    color: var(--mauve);
+}
+
+.btn-fill:hover,
+#next-btn:hover:not(:disabled) {
+    background: #FFFAD9;
+}
+
+/* Outlined cream. It has a mauve fill so the text is easy to read on the light gradient. */
+.btn-line,
+#back-btn {
+    background: var(--mauve);
+    color: var(--cream);
+}
+
+.btn-line:hover,
+#back-btn:hover:not(:disabled) {
+    background: #A06C91;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.nav-buttons button {
+    flex: 1;
+}
+
+/* Greyed-out look for disabled buttons */
+.nav-buttons button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Used by script.js to hide a button (Next on the last step) */
+.hidden {
+    visibility: hidden;
+}
+
+/* ---------- Form fields (for the name and card message step) ---------- */
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+}
+
+input[type="text"],
+textarea,
+select {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--cream);
+    background: rgba(90, 50, 80, 0.45);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+}
+
+::placeholder {
+    color: rgba(248, 241, 196, 0.75);
 }

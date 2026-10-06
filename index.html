@@ -11,6 +11,7 @@
   :root {
     --cream: #F8F1C4;
     --mauve: #8F5B80;
+    --panel: rgba(143, 91, 128, 0.92);
     --mono: "Space Mono", ui-monospace, Menlo, monospace;
     --display: "Unbounded", "Arial Black", system-ui, sans-serif;
   }
@@ -113,7 +114,7 @@
   .btn-line:hover { background: rgba(248, 241, 196, 0.2); }
 
   /* "My bouquets" panel: covers the page when the link goes to #saved */
-  .saved-panel {
+  .panel {
     position: fixed;
     inset: 0;
     z-index: 10;
@@ -124,16 +125,17 @@
     overflow-y: auto;
     background: linear-gradient(180deg, #B78AA6 0%, #D2A9C3 55%, #E6C6D6 100%);
   }
-  .saved-panel[hidden] { display: none; }
-  .saved-card {
+  .panel[hidden] { display: none; }
+  .panel-card {
     width: 100%;
     max-width: 420px;
     padding: 28px 22px;
     text-align: center;
+    background: var(--panel);
     border: 1px solid rgba(248, 241, 196, 0.7);
     border-radius: 28px;
   }
-  .saved-card h2 {
+  .panel-card h2 {
     margin: 0 0 14px;
     font-family: var(--display);
     font-weight: 300;
@@ -143,6 +145,18 @@
   .saved-empty { margin: 8px 0 20px; font-size: 15px; line-height: 1.5; }
   .saved-list { list-style: none; margin: 0 0 20px; padding: 0; text-align: left; }
   .saved-list li { padding: 12px 4px; border-bottom: 1px dashed rgba(248, 241, 196, 0.6); }
+  /* the note for Kat: a card with a dashed inner border and a lily on top */
+  .note-card { position: relative; margin-top: 48px; padding-top: 56px; }
+  .note-card::after {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border: 1px dashed rgba(248, 241, 196, 0.5);
+    border-radius: 22px;
+    pointer-events: none;
+  }
+  .note-lily { position: absolute; top: -44px; left: 50%; width: 88px; height: 88px; transform: translateX(-50%); }
+  .note-text { margin: 16px 0 24px; font-size: 16px; line-height: 1.7; }
   .saved-close { display: inline-block; margin-top: 18px; padding: 10px; font-size: 12px; }
 
   /* The giant word */
@@ -180,7 +194,7 @@
   }
 
   @media (max-width: 700px) {
-    nav a:nth-child(4) { display: none; }
+    nav { font-size: 11px; flex-wrap: wrap; gap: 6px 12px; }
     .blurb.mid { display: none; }
     .mbr { display: inline; }
     .bouquet { max-width: 92vw; }
@@ -224,10 +238,22 @@
 </div>
 
 <!-- MY BOUQUETS: shown when the address ends in #saved. Filled in by the script below. -->
-<section id="saved" class="saved-panel" hidden aria-labelledby="saved-title">
-  <div class="saved-card" id="saved-card" tabindex="-1">
+<section id="saved" class="panel" hidden aria-labelledby="saved-title">
+  <div class="panel-card" id="saved-card" tabindex="-1">
     <h2 id="saved-title">My bouquets</h2>
     <div id="saved-body"></div>
+    <a class="btn btn-fill" href="builder.html">Make a bouquet</a>
+    <br>
+    <a class="saved-close" href="#">Back home</a>
+  </div>
+</section>
+
+<!-- A NOTE FOR KAT: shown when the address ends in #note -->
+<section id="note" class="panel" hidden aria-labelledby="note-title">
+  <div class="panel-card note-card" id="note-card" tabindex="-1">
+    <svg class="note-lily" id="note-lily" viewBox="-60 -60 120 120" aria-hidden="true"></svg>
+    <h2 id="note-title">A note for Kat</h2>
+    <p class="note-text">I made this for you so that you can create the dream bouquets that i will give you in the future... Im sowwy. Folk Love ❤️</p>
     <a class="btn btn-fill" href="builder.html">Make a bouquet</a>
     <br>
     <a class="saved-close" href="#">Back home</a>
@@ -394,9 +420,10 @@
     h1.style.fontSize = (100 * h1.clientWidth / word.offsetWidth) * 0.99 + "px";
   }
 
-  /* ---------- My bouquets panel ---------- */
+  /* ---------- My bouquets panel and the note for Kat ---------- */
   const savedPanel = document.getElementById("saved");
   const savedBody = document.getElementById("saved-body");
+  const notePanel = document.getElementById("note");
 
   // Read the saved bouquets (saving itself is added in build step 7). Any problem = empty list.
   function loadSaved() {
@@ -408,34 +435,46 @@
     }
   }
 
-  function showSaved() {
-    const open = location.hash === "#saved";
-    savedPanel.hidden = !open;
-    document.body.style.overflow = open ? "hidden" : "";
-    if (!open) return;
-
+  // Fill the My bouquets panel: a friendly message if empty, otherwise the names
+  function fillSaved() {
     const list = loadSaved();
     savedBody.innerHTML = "";
     if (list.length === 0) {
-      // nothing saved yet: a little lily and a friendly message
       savedBody.innerHTML = `<svg class="saved-lily" viewBox="-60 -60 120 120" aria-hidden="true">${gradients()}${lily("blush", 0, 0, 1.1, 0)}</svg>
         <p class="saved-empty">No bouquets yet.<br>Make your first one!</p>`;
-    } else {
-      // just the names for now; opening, reusing and deleting come in build step 7
-      const ul = document.createElement("ul");
-      ul.className = "saved-list";
-      list.forEach(function (b) {
-        const li = document.createElement("li");
-        li.textContent = (b && b.name) || "Untitled bouquet";
-        ul.appendChild(li);
-      });
-      savedBody.appendChild(ul);
+      return;
     }
-    document.getElementById("saved-card").focus();
+    // just the names for now; opening, reusing and deleting come in build step 7
+    const ul = document.createElement("ul");
+    ul.className = "saved-list";
+    list.forEach(function (b) {
+      const li = document.createElement("li");
+      li.textContent = (b && b.name) || "Untitled bouquet";
+      ul.appendChild(li);
+    });
+    savedBody.appendChild(ul);
   }
-  window.addEventListener("hashchange", showSaved);
+
+  // Show the panel that matches the end of the address (#saved or #note), or neither
+  function showPanels() {
+    const wantsSaved = location.hash === "#saved";
+    const wantsNote = location.hash === "#note";
+    savedPanel.hidden = !wantsSaved;
+    notePanel.hidden = !wantsNote;
+    document.body.style.overflow = wantsSaved || wantsNote ? "hidden" : "";
+
+    if (wantsSaved) {
+      fillSaved();
+      document.getElementById("saved-card").focus();
+    }
+    if (wantsNote) {
+      document.getElementById("note-lily").innerHTML = gradients() + lily("stargazer", 0, 0, 1.1, 0);
+      document.getElementById("note-card").focus();
+    }
+  }
+  window.addEventListener("hashchange", showPanels);
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && location.hash === "#saved") location.hash = "";
+    if (e.key === "Escape" && (location.hash === "#saved" || location.hash === "#note")) location.hash = "";
   });
 
   /* ---------- Start ---------- */
@@ -444,7 +483,7 @@
   fitWord();
   document.fonts.ready.then(fitWord);
   window.addEventListener("resize", fitWord);
-  showSaved();
+  showPanels();
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) setInterval(nextCombo, 3500);
 </script>
 </body>
