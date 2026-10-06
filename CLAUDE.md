@@ -32,7 +32,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
 
 ## Tech
 - Plain HTML, CSS, and JavaScript. No frameworks, no build step, no npm.
-- Files: `index.html`, `style.css`, `script.js`.
+- Files: `index.html`, `style.css`, `script.js`, `flowers.js` (all SVG drawings: lilies, fillers, wrapping, ribbon), `gallery.html` (test page that shows every drawing).
 - The current `index.html` is an older one-page version. Its lily drawing code can be reused.
 - Hosted on GitHub Pages from the `main` branch root, so all file paths must be relative.
 - Saving uses `localStorage` (key: `happy-lilies-bouquets`), wrapped in try/catch.

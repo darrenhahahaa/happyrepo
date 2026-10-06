@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Lilies: Drawing Gallery</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Test page only: a wrapping grid of cards, one per drawing */
+        .gallery { max-width: 960px; margin: 0 auto; padding: 16px; }
+        .gallery h1, .gallery h2 { text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+        .card { background: var(--card); border-radius: 20px; padding: 12px; text-align: center;
+                box-shadow: 0 4px 12px rgba(200, 150, 160, 0.2); }
+        .card svg { width: 100%; height: 160px; }
+        .card p { margin: 6px 0 0; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="gallery">
+        <h1>Drawing gallery 🌷</h1>
+        <div id="gallery-root"></div>
+    </div>
+
+    <script src="flowers.js"></script>
+    <script>
+        // Each group: a title and a list of drawings (name, draw function, which viewBox to use)
+        const groups = [
+            { title: "Lilies", items: [
+                ["White lily", drawWhiteLily, "flower"],
+                ["Stargazer pink lily", drawStargazerLily, "flower"],
+                ["Orange lily", drawOrangeLily, "flower"],
+                ["Yellow lily", drawYellowLily, "flower"],
+                ["Blush pink lily", drawBlushLily, "flower"]
+            ]},
+            { title: "Filler flowers", items: [
+                ["Baby's breath", drawBabysBreath, "flower"],
+                ["Eucalyptus", drawEucalyptus, "flower"],
+                ["Small daisies", drawDaisies, "flower"],
+                ["Lavender", drawLavender, "flower"]
+            ]},
+            { title: "Wrapping paper", items: [
+                ["Pink paper", function () { return drawWrapping({ color: "#f6c1cc" }); }, "wrapping"],
+                ["Cream paper", function () { return drawWrapping({ color: "#f7e9c8" }); }, "wrapping"],
+                ["Mint paper", function () { return drawWrapping({ color: "#b9e2cf" }); }, "wrapping"],
+                ["Lavender paper", function () { return drawWrapping({ color: "#cdbdf0" }); }, "wrapping"]
+            ]},
+            { title: "Ribbon", items: [
+                ["Rose ribbon", function () { return drawRibbon({ color: "#e2849b" }); }, "ribbon"],
+                ["Gold ribbon", function () { return drawRibbon({ color: "#f2c14e" }); }, "ribbon"],
+                ["Sky ribbon", function () { return drawRibbon({ color: "#7fb7e6" }); }, "ribbon"],
+                ["White ribbon", function () { return drawRibbon({ color: "#ffffff" }); }, "ribbon"]
+            ]}
+        ];
+
+        // Build the page from the list above
+        const root = document.getElementById("gallery-root");
+        groups.forEach(function (group) {
+            let html = "<h2>" + group.title + "</h2><div class='grid'>";
+            group.items.forEach(function (item) {
+                html += "<div class='card'>" + makeSvg(item[1](), VIEWBOX[item[2]]) + "<p>" + item[0] + "</p></div>";
+            });
+            root.innerHTML += html + "</div>";
+        });
+    </script>
+</body>
+</html>
