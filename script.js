@@ -18,10 +18,10 @@ const LILY_TYPES = [
 
 // The filler flowers you can add (all optional)
 const FILLER_TYPES = [
-    { key: "babys", label: "Baby's breath", draw: drawBabysBreath },
-    { key: "eucalyptus", label: "Eucalyptus", draw: drawEucalyptus },
-    { key: "daisies", label: "Small daisies", draw: drawDaisies },
-    { key: "lavender", label: "Lavender", draw: drawLavender }
+    { key: "babys", label: "Baby's breath", draw: drawBabysBreath, reach: 20 },
+    { key: "eucalyptus", label: "Eucalyptus", draw: drawEucalyptus, reach: 28 },
+    { key: "daisies", label: "Small daisies", draw: drawDaisies, reach: 36 },
+    { key: "lavender", label: "Lavender", draw: drawLavender, reach: 36 }
 ];
 
 // Which step we're on (starts at 1)
@@ -191,11 +191,17 @@ function renderPreview() {
         return;
     }
 
+    const fillers = mixedList(FILLER_TYPES, state.fillers);
+    const m = fillers.length;
+
     // The preview is drawn on a 300 x 300 canvas. All stems meet at the base point.
     const baseX = 150;
     const baseY = 285;
-    // Lily size shrinks as more lilies are added, so they all fit
-    const size = Math.min(0.9, 135 / (28 * Math.sqrt(n) + 47));
+    // Lilies shrink as more are added. With fillers, they shrink a bit more and
+    // squeeze together to leave a ring of room around them for the fillers.
+    const room = m === 0 ? 135 : 135 - Math.min(40, 10 + 5 * m);
+    const maxSize = m === 0 ? 0.9 : 0.8;
+    const size = Math.min(maxSize, room / (28 * Math.sqrt(n) + 47));
     const spacing = 28 * size;
 
     // Spread the flower heads in a round dome (a sunflower-style spiral)
@@ -211,7 +217,7 @@ function renderPreview() {
     });
 
     // ----- fillers (drawn first, so they sit behind the lilies) -----
-    // The lily dome is roughly an oval around (150, 130). Fillers stick out past its edge.
+    // The lily dome is roughly an oval around (150, 130). Fillers fan out around it.
     const reach = spacing * Math.sqrt(n - 1);
     const domeW = reach + 47 * size;
     const domeH = reach * 0.75 + 47 * size;
@@ -221,34 +227,44 @@ function renderPreview() {
         return dx * dx + dy * dy <= 1;
     }
 
-    const fillers = mixedList(FILLER_TYPES, state.fillers);
-    const m = fillers.length;
-    // Fan the fillers out evenly from -55 to +55 degrees. A stride mixes the kinds up.
-    let stride = Math.max(1, Math.round(m / 3));
-    while (m > 1 && gcd(stride, m) !== 1) stride++;
-
-    let fillerSvg = '';
+    // Split the fillers into a back row (taller, wider) and a front row (shorter, tucked in),
+    // alternating so each row gets a mix of kinds.
+    const kinds = FILLER_TYPES.filter(function (type) { return state.fillers[type.key] > 0; }).length;
+    const rows = [[], []];
     fillers.forEach(function (type, i) {
-        const slot = (i * stride) % m;
-        const degrees = m === 1 ? 20 : -55 + 110 * slot / (m - 1);
-        const a = degrees * Math.PI / 180;
-
-        // walk out from the base along this angle to find where the lily dome ends
-        let edge = 0;
-        for (let d = 0; d < 400; d += 2) {
-            if (insideDome(baseX + d * Math.sin(a), baseY - d * Math.cos(a))) edge = d;
-        }
-        // reach a bit past the dome (a different amount each time so it looks natural)
-        let tip = (edge > 0 ? edge : 120) + 22 + (i % 3) * 9;
-        // never go off the edges of the picture
-        tip = Math.min(tip, 275, Math.abs(Math.sin(a)) > 0.01 ? 120 / Math.abs(Math.sin(a)) : 275);
-        const scale = Math.max(0.5, tip / 128);
-
-        // the drawing is 100 x 140 with its stem at the bottom middle, so
-        // turn it around that point and place the stem at the base
-        fillerSvg += '<g transform="translate(' + baseX + ' ' + baseY + ') rotate(' + degrees.toFixed(1) + ') scale(' + scale.toFixed(3) + ') translate(-50 -140)">' +
-            type.draw() + '</g>';
+        const row = kinds % 2 === 0 ? (i + Math.floor(i / kinds)) % 2 : i % 2;
+        rows[row].push(type);
     });
+
+    // Place each row evenly across a fan of angles (the front row is a bit narrower)
+    let backSvg = '';
+    let frontSvg = '';
+    rows.forEach(function (rowList, rowNumber) {
+        const spread = 54 - rowNumber * 12;
+        rowList.forEach(function (type, j) {
+            const step = 2 * spread / rowList.length;
+            const degrees = rowList.length === 1 ? (rowNumber ? -14 : 14) : -spread + step * (j + 0.5);
+            const a = degrees * Math.PI / 180;
+
+            // walk out from the base along this angle to find where the lily dome ends
+            let edge = 0;
+            for (let d = 0; d < 400; d += 2) {
+                if (insideDome(baseX + d * Math.sin(a), baseY - d * Math.cos(a))) edge = d;
+            }
+            // stick out past the dome: tall kinds more, the front row less
+            let tip = (edge > 0 ? edge : 120) + type.reach - rowNumber * 12;
+            // never go off the edges of the picture
+            tip = Math.min(tip, 275, Math.abs(Math.sin(a)) > 0.01 ? 120 / Math.abs(Math.sin(a)) : 275);
+            const scale = Math.max(0.5, tip / 128);
+
+            // the drawing is 100 x 140 with its stem at the bottom middle, so
+            // turn it around that point and place the stem at the base
+            const group = '<g transform="translate(' + baseX + ' ' + baseY + ') rotate(' + degrees.toFixed(1) + ') scale(' + scale.toFixed(3) + ') translate(-50 -140)">' +
+                type.draw() + '</g>';
+            if (rowNumber === 0) { backSvg += group; } else { frontSvg += group; }
+        });
+    });
+    const fillerSvg = backSvg + frontSvg;
 
     // ----- lily stems and heads -----
     let stems = '';
@@ -274,9 +290,72 @@ function gcd(a, b) {
 }
 
 // ---------------------------------------------------------------
+// Main page (welcome)
+// ---------------------------------------------------------------
+const welcomePage = document.getElementById("welcome");
+const welcomeArt = document.getElementById("welcome-art");
+const builderPage = document.getElementById("builder");
+const startBtn = document.getElementById("start-btn");
+
+// Draw the bouquet picture for the main page: filler sprigs, five lilies that bloom,
+// a paper cone and a bow. It uses the same drawings as the builder.
+function renderWelcome() {
+    const baseX = 150;
+    const baseY = 200;
+
+    // Sprigs fanned out behind the lilies: [drawing, angle, size]
+    const sprigs = [
+        [drawEucalyptus, -42, 1.15],
+        [drawEucalyptus, 42, 1.15],
+        [drawBabysBreath, -16, 1.25],
+        [drawBabysBreath, 18, 1.2]
+    ];
+    let back = "";
+    sprigs.forEach(function (s) {
+        back += '<g transform="translate(' + baseX + ' ' + baseY + ') rotate(' + s[1] + ') scale(' + s[2] + ') translate(-50 -140)">' + s[0]() + '</g>';
+    });
+
+    // The five lilies, back ones first: [drawing, x, y, size, turn, bloom delay in seconds]
+    const lilies = [
+        [drawOrangeLily, 120, 70, 0.62, 10, 0.2],
+        [drawYellowLily, 182, 66, 0.62, -20, 0.35],
+        [drawWhiteLily, 96, 118, 0.7, 25, 0.5],
+        [drawBlushLily, 204, 118, 0.7, -10, 0.65],
+        [drawStargazerLily, 150, 102, 0.8, 0, 0.85]
+    ];
+    let stems = "";
+    let heads = "";
+    lilies.forEach(function (l) {
+        const path = "M" + l[1] + " " + l[2] + " L" + baseX + " " + baseY;
+        stems += '<path d="' + path + '" stroke="' + LEAF_LINE + '" stroke-width="5.5" stroke-linecap="round"/>';
+        stems += '<path d="' + path + '" stroke="' + LEAF_GREEN + '" stroke-width="3.4" stroke-linecap="round"/>';
+        heads += '<g transform="translate(' + l[1] + ' ' + l[2] + ') rotate(' + l[4] + ') scale(' + l[3] + ')">' +
+            '<g class="bloom" style="--delay:' + l[5] + 's"><g transform="translate(-50 -52)">' + l[0]({ headOnly: true }) + '</g></g></g>';
+    });
+
+    // The paper cone (covers the bottom of the stems) with a bow on the front
+    const wrapping = '<g transform="translate(60 160) scale(0.8)">' + drawWrapping({ color: "#f6c1cc" }) + '</g>';
+    const bow = '<g transform="translate(106 255) scale(0.5)">' + drawRibbon({ color: "#e2849b" }) + '</g>';
+
+    welcomeArt.innerHTML = makeSvg(back + stems + heads + wrapping + bow, "0 0 300 340");
+}
+
+// "Make a bouquet": hide the main page and show the builder at step 1.
+// The picture is removed so the builder's drawings don't share color names with it.
+function startBuilder() {
+    welcomePage.hidden = true;
+    welcomeArt.innerHTML = "";
+    builderPage.hidden = false;
+    showStep(1);
+    window.scrollTo(0, 0);
+}
+startBtn.addEventListener("click", startBuilder);
+
+// ---------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------
 buildPicker(lilyList, LILY_TYPES, "lilies", "2 4 96 96");
 buildPicker(fillerList, FILLER_TYPES, "fillers", "0 0 100 140");
 updatePickers();
 showStep(1);
+renderWelcome();

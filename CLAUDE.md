@@ -4,6 +4,7 @@
 A website where people build a custom lily bouquet step by step, then see it as a cute drawn picture at the end. It lives in the `happyrepo` repo and is hosted on GitHub Pages.
 
 ## User flow (step by step)
+0. **Main page** (shows first): big title "Lilies for Kat", a short sweet message, a cute lily bouquet drawing that blooms when the page loads (no animation if the device asks for reduced motion), and a **Make a bouquet** button that starts step 1. A "My bouquets" link is there too, hidden until saving exists (build step 7). The site is a gift for Kat, whose favorite flower is the lily.
 1. **Lilies**: pick lily colors (white, pink stargazer, orange, yellow, blush pink) and how many of each.
 2. **Filler flowers**: add things around the lilies: baby's breath, eucalyptus, small daisies, lavender. Optional.
 3. **Wrapping**: pick a wrapping paper color and a ribbon color.
@@ -32,7 +33,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
 
 ## Tech
 - Plain HTML, CSS, and JavaScript. No frameworks, no build step, no npm.
-- Files: `index.html`, `style.css`, `script.js`, `flowers.js` (all SVG drawings: lilies, fillers, wrapping, ribbon), `gallery.html` (test page that shows every drawing).
+- Files: `index.html`, `style.css`, `script.js`, `flowers.js` (all SVG drawings: lilies, fillers, wrapping, ribbon), `gallery.html` (test page that shows every drawing). The main page lives inside `index.html` (`#welcome`); the builder is `#builder`, and `script.js` switches between them.
 - The current `index.html` is an older one-page version. Its lily drawing code can be reused.
 - Hosted on GitHub Pages from the `main` branch root, so all file paths must be relative.
 - Saving uses `localStorage` (key: `happy-lilies-bouquets`), wrapped in try/catch.

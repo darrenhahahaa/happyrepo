@@ -3,14 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Happy Lilies</title>
+    <title>Lilies for Kat</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <main class="app">
+    <!-- MAIN PAGE: the first thing Kat sees. script.js draws the bouquet picture into #welcome-art. -->
+    <section id="welcome" class="welcome">
+        <h1 class="welcome-title">Lilies for Kat</h1>
+
+        <div id="welcome-art" class="welcome-art" role="img" aria-label="A drawing of a bouquet of lilies"></div>
+
+        <!-- CHANGE THIS: the message to Kat goes here -->
+        <p id="welcome-message" class="welcome-message">I made this just for you. Pick your favorite lilies and build a bouquet that will never wilt. 💛</p>
+
+        <button id="start-btn" class="primary-btn" type="button">Make a bouquet</button>
+
+        <!-- Hidden for now. It gets turned on once saving bouquets exists (build step 7). -->
+        <button id="my-bouquets-link" class="link-btn" type="button" hidden>My bouquets</button>
+    </section>
+
+    <!-- BOUQUET BUILDER: hidden until she presses "Make a bouquet" -->
+    <main id="builder" class="app" hidden>
         <!-- Header: site name + which step we're on -->
         <header class="app-header">
-            <h1>Happy Lilies 🌸</h1>
+            <h1>Lilies for Kat 🌸</h1>
             <p id="step-label" class="step-label">Step 1 of 5</p>
         </header>
 
