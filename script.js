@@ -11,7 +11,9 @@ let currentStep = 1;
 // fillers: how many of each filler,     e.g. { babys: 1, lavender: 2, ... }
 // arrangement: null while the bouquet uses the hand-made template layout. Once someone starts
 //              "Arrange it yourself" it holds the position of every flower (see bouquet.js).
-const state = { lilies: {}, fillers: {}, arrangement: null };
+// wrap, ribbon: the keys of the picked wrapping paper and ribbon colors (see bouquet.js).
+//               They start with a default so the bouquet is never unwrapped.
+const state = { lilies: {}, fillers: {}, arrangement: null, wrap: DEFAULT_WRAP, ribbon: DEFAULT_RIBBON };
 
 // Is "Arrange it yourself" switched on right now? (Only for the current visit to a step.)
 let arranging = false;
@@ -28,6 +30,8 @@ const lilyList = document.getElementById("lily-list");
 const lilyTotalText = document.getElementById("lily-total");
 const lilyMessage = document.getElementById("lily-message");
 const fillerList = document.getElementById("filler-list");
+const wrapSwatches = document.getElementById("wrap-swatches");
+const ribbonSwatches = document.getElementById("ribbon-swatches");
 const arrangeBar = document.getElementById("arrange-bar");
 const arrangeBtn = document.getElementById("arrange-btn");
 const resetBtn = document.getElementById("reset-btn");
@@ -185,8 +189,48 @@ function renderPreview() {
         previewBox.innerHTML = '<p class="preview-empty">Add a lily to see your bouquet!</p>';
         return;
     }
-    previewBox.innerHTML = makeSvg(drawBouquet(state.lilies, state.fillers, state.arrangement, arranging), "0 0 300 300");
+    previewBox.innerHTML = makeSvg(drawBouquet(state.lilies, state.fillers, state.arrangement, arranging, wrapColors(state.wrap, state.ribbon)), "0 0 300 300");
 }
+
+// ---------------------------------------------------------------
+// Step 3: wrapping paper and ribbon
+// ---------------------------------------------------------------
+
+// Build a row of round color swatches with their names. group is "wrap" or "ribbon"
+// (the part of `state` the choice is kept in).
+function buildSwatches(container, colors, group) {
+    colors.forEach(function (c) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "swatch";
+        button.dataset.group = group;
+        button.dataset.key = c.key;
+        button.setAttribute("role", "radio");
+        button.innerHTML = '<span class="swatch-dot" style="background:' + c.color + '"></span>' +
+            '<span class="swatch-name">' + c.label + '</span>';
+        container.appendChild(button);
+    });
+}
+
+// Mark the picked swatch in each row
+function updateSwatches() {
+    document.querySelectorAll(".swatch").forEach(function (button) {
+        const picked = state[button.dataset.group] === button.dataset.key;
+        button.classList.toggle("picked", picked);
+        button.setAttribute("aria-checked", picked ? "true" : "false");
+    });
+}
+
+// One listener handles both rows. The preview updates right away.
+function handleSwatchClick(event) {
+    const button = event.target.closest(".swatch");
+    if (!button) return;
+    state[button.dataset.group] = button.dataset.key;
+    updateSwatches();
+    renderPreview();
+}
+wrapSwatches.addEventListener("click", handleSwatchClick);
+ribbonSwatches.addEventListener("click", handleSwatchClick);
 
 // ---------------------------------------------------------------
 // Arrange it yourself
@@ -250,6 +294,10 @@ previewBox.addEventListener("pointerdown", function (event) {
         moveY: item.y
     };
 
+    // show the dotted line around the area flowers can go in, but only while one is being dragged
+    const outline = previewBox.querySelector(".area-outline");
+    if (outline) outline.setAttribute("opacity", "0.6");
+
     // the flower you pick up goes to the front
     item.z = highestZ(state.arrangement) + 1;
     picture.parentNode.appendChild(picture);
@@ -262,7 +310,7 @@ previewBox.addEventListener("pointermove", function (event) {
     if (!drag || event.pointerId !== drag.pointerId) return;
     const p = pointInBouquet(event, drag.zoomGroup);
     // stay inside the bouquet area
-    const spot = clampToArea(p.x + drag.grabX, p.y + drag.grabY, state.arrangement.zoom);
+    const spot = clampToArea(p.x + drag.grabX, p.y + drag.grabY, state.arrangement.area);
     drag.moveX = spot.x;
     drag.moveY = spot.y;
     const dx = spot.x - drag.item.x;
@@ -271,10 +319,8 @@ previewBox.addEventListener("pointermove", function (event) {
     // move the flower, and bend its stem so it stays joined to the bundle
     drag.body.setAttribute("transform", "translate(" + dx.toFixed(1) + " " + dy.toFixed(1) + ")");
     drag.stems.forEach(function (path) {
-        const x = Number(path.dataset.sx) + dx;
-        const y = Number(path.dataset.sy) + dy;
-        const bundle = Number(path.dataset.bundle);
-        path.setAttribute("d", "M" + x.toFixed(1) + " " + y.toFixed(1) + " Q" + (x + (bundle - x) * 0.15).toFixed(1) + " " + (y * 0.4).toFixed(1) + " " + bundle.toFixed(1) + " 0");
+        const route = path.dataset.rim ? { rimY: Number(path.dataset.rim), mouth: Number(path.dataset.mouth) } : null;
+        path.setAttribute("d", stemPathData(Number(path.dataset.sx) + dx, Number(path.dataset.sy) + dy, Number(path.dataset.bundle), route));
     });
 });
 
@@ -296,7 +342,7 @@ previewBox.addEventListener("pointercancel", endDrag);
 // Everything needed to rebuild this bouquet, as plain data that can be saved with JSON.
 // It includes the hand-arranged positions, so a saved bouquet keeps them.
 function getBouquetData() {
-    return JSON.parse(JSON.stringify({ lilies: state.lilies, fillers: state.fillers, arrangement: state.arrangement }));
+    return JSON.parse(JSON.stringify({ lilies: state.lilies, fillers: state.fillers, arrangement: state.arrangement, wrap: state.wrap, ribbon: state.ribbon }));
 }
 
 // The opposite: set the bouquet from saved data
@@ -304,6 +350,9 @@ function loadBouquetData(data) {
     LILY_TYPES.forEach(function (type) { state.lilies[type.key] = data.lilies[type.key] || 0; });
     FILLER_TYPES.forEach(function (type) { state.fillers[type.key] = data.fillers[type.key] || 0; });
     state.arrangement = data.arrangement || null;
+    state.wrap = data.wrap || DEFAULT_WRAP;
+    state.ribbon = data.ribbon || DEFAULT_RIBBON;
+    updateSwatches();
     arranging = false;
     updatePickers();
 }
@@ -313,5 +362,8 @@ function loadBouquetData(data) {
 // ---------------------------------------------------------------
 buildPicker(lilyList, LILY_TYPES, "lilies", "2 4 96 96");
 buildPicker(fillerList, FILLER_TYPES, "fillers", "0 0 100 140");
+buildSwatches(wrapSwatches, WRAP_COLORS, "wrap");
+buildSwatches(ribbonSwatches, RIBBON_COLORS, "ribbon");
+updateSwatches();
 updatePickers();
 showStep(1);

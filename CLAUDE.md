@@ -7,14 +7,14 @@ A website where people build a custom lily bouquet step by step, then see it as 
 0. **Main page** (`index.html`, shows first): the design from the old `main-page.html`: big "LILIES FOR KAT" word, a swaying bouquet that changes colors, falling petals. Two pill buttons side by side (on phones, near the top under the nav): **Make a bouquet** (filled cream, opens `builder.html` at step 1) and **My bouquets** (outlined cream, opens the saved bouquets list). The nav links do the same things. The site is a gift for Kat, whose favorite flower is the lily.
 1. **Lilies**: pick lily colors (white, pink stargazer, orange, yellow, blush pink) and how many of each.
 2. **Filler flowers**: add things around and between the lilies: baby's breath, eucalyptus, small daisies, lavender. Optional. Max 6 of each.
-3. **Wrapping**: pick a wrapping paper color and a ribbon color.
+3. **Wrapping**: pick a wrapping paper color (Cream, Blush, Sage, Lavender, Kraft) and a ribbon color (Mauve, Rose, Butter, Sage, White) from round swatches with names. The wrap and bow are drawn around the bouquet in the live preview and update right away. Defaults: Cream paper and Mauve ribbon, so the bouquet is never unwrapped (it is wrapped from step 1).
 4. **Finishing touches**: give the bouquet a name and write a card message. Both optional.
 5. **Final reveal**: show the finished bouquet drawing, big, with its name and card.
 
 - Every step has Back and Next buttons. Going back never loses choices.
 - Show which step you're on (e.g. "Step 2 of 5").
 - A small live preview while building is nice to have. The reveal is the big moment.
-- **Arrange it yourself**: a button under the preview. The bouquet starts with the template layout. Switch it on and any flower can be dragged (mouse or touch). The flower you pick up moves to the front. Flowers stay inside the bouquet area (a dotted outline is shown while arranging), never off the wrap. **Reset arrangement** snaps everything back to the template. Custom positions are kept when going Back/Next and are part of the data saved to My bouquets (`getBouquetData` / `loadBouquetData` in `script.js`). Adding or removing a flower keeps all the others where they are: a new flower takes a free spot, a removed one is the last one added of that kind.
+- **Arrange it yourself**: a button under the preview. The bouquet starts with the template layout. Switch it on and any flower can be dragged (mouse or touch). The flower you pick up moves to the front. Flowers stay inside the bouquet area, a dome just above the wrap's opening (a dotted outline shows it, but only while a flower is being dragged), never outside it or down into the wrap. A dragged flower keeps its stem going into the wrap. **Reset arrangement** snaps everything back to the template. Custom positions are kept when going Back/Next and are part of the data saved to My bouquets (`getBouquetData` / `loadBouquetData` in `script.js`). Adding or removing a flower keeps all the others where they are: a new flower takes a free spot, a removed one is the last one added of that kind.
 
 ## Rules
 - A bouquet must always have at least 1 lily. Next is disabled on step 1 until there is one.
@@ -26,6 +26,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
   - baby's breath: small puffs tucked into the gaps on the edge, just peeking out
   - daisies: a neat row along the front lower edge
 - All stems (lilies and fillers) are tied into one tight bundle at the bottom, where the wrapping gathers them. Stems curve neatly into it and are trimmed flat. No long messy stems.
+- The bouquet is proportioned like a real one: the wrapping paper is about 40-45% of the total height and holds the bouquet. The flowers sit right at its opening, the flower dome is only a little wider than the opening, and stems are short and mostly hidden behind the paper (no long bare stems). The paper's top edge sits just below the lowest lily and is as wide as the stems are there; it narrows to a point under the tied stems. Stems enter the paper through its opening. The ribbon is a sash with a bow where the paper narrows. Flowers sit above the paper's top edge and are never covered by it. In "Arrange it yourself" flowers can't be dragged below the paper's top edge.
 - Layouts are hand-made, not automatic. `bouquet.js` has a fixed table with one arrangement for every number of lilies (1 to 18, `LILY_LAYOUTS`) and one for every number of each filler (1 to 6, `FILLER_LAYOUTS`). To change how a bouquet looks, edit the numbers in those tables. Adding a flower switches to the next template layout, so the flowers can move a little (but not once the bouquet has been arranged by hand).
 - Lily colors are spread out evenly (same colors as far apart as possible, not clumped), worked out the same way every time.
 - No randomness anywhere in the layout: the same choices always give exactly the same bouquet.

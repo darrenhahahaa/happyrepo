@@ -37,6 +37,25 @@ const FILLER_TYPES = [
       scale: 0.7, top: 12, stemLine: "#46704a", stemColor: "#6f9a6a", stemWidth: 3 }
 ];
 
+// The wrapping paper and ribbon colors you can pick. "color" is what gets drawn.
+const WRAP_COLORS = [
+    { key: "cream", label: "Cream", color: "#f4e6c4" },
+    { key: "blush", label: "Blush", color: "#f6c1cc" },
+    { key: "sage", label: "Sage", color: "#b3cdb4" },
+    { key: "lavender", label: "Lavender", color: "#cdbdf0" },
+    { key: "kraft", label: "Kraft", color: "#d4a97a" }
+];
+const RIBBON_COLORS = [
+    { key: "mauve", label: "Mauve", color: "#8f5b80" },
+    { key: "rose", label: "Rose", color: "#e2849b" },
+    { key: "butter", label: "Butter", color: "#f2d46a" },
+    { key: "sage", label: "Sage", color: "#7fa88a" },
+    { key: "white", label: "White", color: "#ffffff" }
+];
+// The bouquet is never left unwrapped: these are used until something else is picked
+const DEFAULT_WRAP = "cream";
+const DEFAULT_RIBBON = "mauve";
+
 // ---------------------------------------------------------------
 // LILY LAYOUTS: one hand-made arrangement for every number of lilies, 1 to 18
 // ---------------------------------------------------------------
@@ -45,107 +64,109 @@ const FILLER_TYPES = [
 // Each lily is [x, y, size, turn]: its place, its size (front lilies are lower and a bit bigger,
 // back ones higher and a bit smaller) and how far its petals are turned, in degrees.
 // The first lily in each list is the middle one, then the ring around it, then the outer ring.
-// Every layout is balanced left to right. centerY is the height of the middle of the dome.
+// Every layout is balanced left to right. centerY is the height of the middle of the dome
+// (the lowest bloom sits just above the opening of the wrapping paper; the paper below it
+// is about three quarters as tall as the flowers, so it is roughly 40 to 45% of the whole bouquet).
 // To change how a bouquet looks, just edit the numbers.
 const LILY_LAYOUTS = {
-    1: { centerY: -124, lilies: [
-        [0, -124, 0.62, -30]
+    1: { centerY: -144.5, lilies: [
+        [0, -144.5, 0.62, -30]
     ] },
-    2: { centerY: -124, lilies: [
-        [-27, -124, 0.62, -30], [27, -124, 0.62, -7]
+    2: { centerY: -144.5, lilies: [
+        [-24, -144.5, 0.62, -30], [24, -144.5, 0.62, -7]
     ] },
-    3: { centerY: -141.6, lilies: [
-        [0.0, -176.8, 0.588, -30], [34.6, -124.0, 0.636, -7], [-34.6, -124.0, 0.636, 16]
+    3: { centerY: -195.3, lilies: [
+        [0.0, -226.6, 0.589, -30], [29.4, -179.7, 0.636, -7], [-29.4, -179.7, 0.636, 16]
     ] },
-    4: { centerY: -169.8, lilies: [
-        [0, -169.8, 0.62, -30], [-45.0, -192.6, 0.599, -7], [45.0, -192.6, 0.599, 16],
-        [0.0, -124.0, 0.662, -21]
+    4: { centerY: -238.3, lilies: [
+        [0, -238.3, 0.62, -30], [-41.6, -260.4, 0.598, -7], [41.6, -260.4, 0.598, 16],
+        [0.0, -194.2, 0.664, -21]
     ] },
-    5: { centerY: -146.9, lilies: [
-        [0, -146.9, 0.62, -30], [-45.0, -169.8, 0.599, -7], [45.0, -169.8, 0.599, 16],
-        [-45.0, -124.0, 0.641, -21], [45.0, -124.0, 0.641, 2]
+    5: { centerY: -199.7, lilies: [
+        [0, -199.7, 0.62, -30], [-41.6, -221.8, 0.598, -7], [41.6, -221.8, 0.598, 16],
+        [-41.6, -177.6, 0.642, -21], [41.6, -177.6, 0.642, 2]
     ] },
-    6: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [-46.8, -195.3, 0.598, -7], [46.8, -195.3, 0.598, 16],
-        [-46.8, -147.8, 0.642, -21], [46.8, -147.8, 0.642, 2], [0.0, -124.0, 0.663, 25]
+    6: { centerY: -238.3, lilies: [
+        [0, -238.3, 0.62, -30], [-41.6, -260.4, 0.598, -7], [41.6, -260.4, 0.598, 16],
+        [-41.6, -216.3, 0.642, -21], [41.6, -216.3, 0.642, 2], [0.0, -194.2, 0.664, 25]
     ] },
-    7: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12]
+    7: { centerY: -254.9, lilies: [
+        [0, -254.9, 0.62, -30], [0.0, -299.1, 0.576, -7], [-41.6, -277.0, 0.598, 16],
+        [41.6, -277.0, 0.598, -21], [-41.6, -232.8, 0.642, 2], [41.6, -232.8, 0.642, 25],
+        [0.0, -210.7, 0.664, -12]
     ] },
-    8: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [0.0, -266.6, 0.533, 11]
+    8: { centerY: -286.6, lilies: [
+        [0, -286.6, 0.62, -30], [0.0, -330.8, 0.576, -7], [-41.6, -308.7, 0.598, 16],
+        [41.6, -308.7, 0.598, -21], [-41.6, -264.6, 0.642, 2], [41.6, -264.6, 0.642, 25],
+        [0.0, -242.5, 0.664, -12], [0.0, -373.1, 0.533, 11]
     ] },
-    9: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-104.3, -196.1, 0.598, 11], [104.3, -196.1, 0.598, -26]
+    9: { centerY: -254.9, lilies: [
+        [0, -254.9, 0.62, -30], [0.0, -299.1, 0.576, -7], [-41.6, -277.0, 0.598, 16],
+        [41.6, -277.0, 0.598, -21], [-41.6, -232.8, 0.642, 2], [41.6, -232.8, 0.642, 25],
+        [0.0, -210.7, 0.664, -12], [-90.8, -277.3, 0.598, 11], [90.8, -277.3, 0.598, -26]
     ] },
-    10: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-104.3, -196.1, 0.598, 11], [0.0, -266.6, 0.533, -26],
-        [104.3, -196.1, 0.598, -3]
+    10: { centerY: -286.6, lilies: [
+        [0, -286.6, 0.62, -30], [0.0, -330.8, 0.576, -7], [-41.6, -308.7, 0.598, 16],
+        [41.6, -308.7, 0.598, -21], [-41.6, -264.6, 0.642, 2], [41.6, -264.6, 0.642, 25],
+        [0.0, -242.5, 0.664, -12], [-90.8, -309.0, 0.598, 11], [0.0, -373.1, 0.533, -26],
+        [90.8, -309.0, 0.598, -3]
     ] },
-    11: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-108.0, -171.5, 0.62, 11], [-69.4, -244.3, 0.553, -26],
-        [69.4, -244.3, 0.553, -3], [108.0, -171.5, 0.62, 20]
+    11: { centerY: -271.5, lilies: [
+        [0, -271.5, 0.62, -30], [0.0, -315.6, 0.576, -7], [-41.6, -293.5, 0.598, 16],
+        [41.6, -293.5, 0.598, -21], [-41.6, -249.4, 0.642, 2], [41.6, -249.4, 0.642, 25],
+        [0.0, -227.3, 0.664, -12], [-94.0, -271.5, 0.62, 11], [-60.4, -337.7, 0.554, -26],
+        [60.4, -337.7, 0.554, -3], [94.0, -271.5, 0.62, 20]
     ] },
-    12: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-108.0, -171.5, 0.62, 11], [-69.4, -244.3, 0.553, -26],
-        [0.0, -266.6, 0.533, -3], [69.4, -244.3, 0.553, 20], [108.0, -171.5, 0.62, -17]
+    12: { centerY: -286.6, lilies: [
+        [0, -286.6, 0.62, -30], [0.0, -330.8, 0.576, -7], [-41.6, -308.7, 0.598, 16],
+        [41.6, -308.7, 0.598, -21], [-41.6, -264.6, 0.642, 2], [41.6, -264.6, 0.642, 25],
+        [0.0, -242.5, 0.664, -12], [-94.0, -286.6, 0.62, 11], [-60.4, -352.9, 0.554, -26],
+        [0.0, -373.1, 0.533, -3], [60.4, -352.9, 0.554, 20], [94.0, -286.6, 0.62, -17]
     ] },
-    13: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-101.5, -139.0, 0.65, 11], [-101.5, -204.0, 0.59, -26],
-        [-54.0, -253.8, 0.545, -3], [54.0, -253.8, 0.545, 20], [101.5, -204.0, 0.59, -17],
-        [101.5, -139.0, 0.65, 6]
+    13: { centerY: -278.0, lilies: [
+        [0, -278.0, 0.62, -30], [0.0, -322.1, 0.576, -7], [-41.6, -300.0, 0.598, 16],
+        [41.6, -300.0, 0.598, -21], [-41.6, -255.9, 0.642, 2], [41.6, -255.9, 0.642, 25],
+        [0.0, -233.8, 0.664, -12], [-88.3, -248.4, 0.65, 11], [-88.3, -307.5, 0.59, -26],
+        [-47.0, -352.8, 0.545, -3], [47.0, -352.8, 0.545, 20], [88.3, -307.5, 0.59, -17],
+        [88.3, -248.4, 0.65, 6]
     ] },
-    14: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-101.5, -139.0, 0.65, 11], [-101.5, -204.0, 0.59, -26],
-        [-54.0, -253.8, 0.545, -3], [0.0, -266.6, 0.533, 20], [54.0, -253.8, 0.545, -17],
-        [101.5, -204.0, 0.59, 6], [101.5, -139.0, 0.65, 29]
+    14: { centerY: -286.6, lilies: [
+        [0, -286.6, 0.62, -30], [0.0, -330.8, 0.576, -7], [-41.6, -308.7, 0.598, 16],
+        [41.6, -308.7, 0.598, -21], [-41.6, -264.6, 0.642, 2], [41.6, -264.6, 0.642, 25],
+        [0.0, -242.5, 0.664, -12], [-88.3, -257.1, 0.65, 11], [-88.3, -316.2, 0.59, -26],
+        [-47.0, -361.5, 0.545, -3], [0.0, -373.1, 0.533, 20], [47.0, -361.5, 0.545, -17],
+        [88.3, -316.2, 0.59, 6], [88.3, -257.1, 0.65, 29]
     ] },
-    15: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-97.9, -131.4, 0.657, 11], [-106.4, -188.0, 0.605, -26],
-        [-82.7, -232.6, 0.564, -3], [-36.9, -260.8, 0.538, 20], [36.9, -260.8, 0.538, -17],
-        [82.7, -232.6, 0.564, 6], [106.4, -188.0, 0.605, 29], [97.9, -131.4, 0.657, -8]
+    15: { centerY: -282.7, lilies: [
+        [0, -282.7, 0.62, -30], [0.0, -326.9, 0.576, -7], [-41.6, -304.8, 0.598, 16],
+        [41.6, -304.8, 0.598, -21], [-41.6, -260.6, 0.642, 2], [41.6, -260.6, 0.642, 25],
+        [0.0, -238.6, 0.664, -12], [-85.2, -246.2, 0.657, 11], [-92.6, -297.7, 0.605, -26],
+        [-72.0, -338.3, 0.564, -3], [-32.1, -364.0, 0.538, 20], [32.1, -364.0, 0.538, -17],
+        [72.0, -338.3, 0.564, 6], [92.6, -297.7, 0.605, 29], [85.2, -246.2, 0.657, -8]
     ] },
-    16: { centerY: -171.5, lilies: [
-        [0, -171.5, 0.62, -30], [0.0, -219.0, 0.577, -7], [-46.8, -195.3, 0.598, 16],
-        [46.8, -195.3, 0.598, -21], [-46.8, -147.8, 0.642, 2], [46.8, -147.8, 0.642, 25],
-        [0.0, -124.0, 0.663, -12], [-93.5, -124.0, 0.663, 11], [-108.0, -171.5, 0.62, -26],
-        [-93.5, -219.0, 0.577, -3], [-54.0, -253.8, 0.545, 20], [0.0, -266.6, 0.533, -17],
-        [54.0, -253.8, 0.545, 6], [93.5, -219.0, 0.577, 29], [108.0, -171.5, 0.62, -8],
-        [93.5, -124.0, 0.663, 15]
+    16: { centerY: -286.6, lilies: [
+        [0, -286.6, 0.62, -30], [0.0, -330.8, 0.576, -7], [-41.6, -308.7, 0.598, 16],
+        [41.6, -308.7, 0.598, -21], [-41.6, -264.6, 0.642, 2], [41.6, -264.6, 0.642, 25],
+        [0.0, -242.5, 0.664, -12], [-81.4, -243.4, 0.663, 11], [-94.0, -286.6, 0.62, -26],
+        [-81.4, -329.9, 0.577, -3], [-47.0, -361.5, 0.545, 20], [0.0, -373.1, 0.533, -17],
+        [47.0, -361.5, 0.545, 6], [81.4, -329.9, 0.577, 29], [94.0, -286.6, 0.62, -8],
+        [81.4, -243.4, 0.663, 15]
     ] },
-    17: { centerY: -191.2, lilies: [
-        [0, -191.2, 0.62, -30], [0.0, -238.7, 0.577, -7], [-46.8, -215.0, 0.598, 16],
-        [46.8, -215.0, 0.598, -21], [-46.8, -167.4, 0.642, 2], [46.8, -167.4, 0.642, 25],
-        [0.0, -143.7, 0.663, -12], [-76.4, -124.0, 0.681, 11], [-104.3, -166.6, 0.642, -26],
-        [-104.3, -215.8, 0.598, -3], [-76.4, -258.4, 0.559, 20], [-28.0, -283.0, 0.536, -17],
-        [28.0, -283.0, 0.536, 6], [76.4, -258.4, 0.559, 29], [104.3, -215.8, 0.598, -8],
-        [104.3, -166.6, 0.642, 15], [76.4, -124.0, 0.681, -22]
+    17: { centerY: -314.2, lilies: [
+        [0, -314.2, 0.62, -30], [0.0, -358.3, 0.576, -7], [-41.6, -336.2, 0.598, 16],
+        [41.6, -336.2, 0.598, -21], [-41.6, -292.1, 0.642, 2], [41.6, -292.1, 0.642, 25],
+        [0.0, -270.0, 0.664, -12], [-66.5, -253.0, 0.681, 11], [-90.8, -291.8, 0.642, -26],
+        [-90.8, -336.5, 0.598, -3], [-66.5, -375.3, 0.559, 20], [-24.3, -397.7, 0.536, -17],
+        [24.3, -397.7, 0.536, 6], [66.5, -375.3, 0.559, 29], [90.8, -336.5, 0.598, -8],
+        [90.8, -291.8, 0.642, 15], [66.5, -253.0, 0.681, -22]
     ] },
-    18: { centerY: -206.3, lilies: [
-        [0, -206.3, 0.62, -30], [0.0, -253.8, 0.577, -7], [-46.8, -230.1, 0.598, 16],
-        [46.8, -230.1, 0.598, -21], [-46.8, -182.5, 0.642, 2], [46.8, -182.5, 0.642, 25],
-        [0.0, -158.8, 0.663, -12], [-54.0, -124.0, 0.695, 11], [-93.5, -158.8, 0.663, -26],
-        [-108.0, -206.3, 0.62, -3], [-93.5, -253.8, 0.577, 20], [-54.0, -288.6, 0.545, -17],
-        [0.0, -301.3, 0.533, 6], [54.0, -288.6, 0.545, 29], [93.5, -253.8, 0.577, -8],
-        [108.0, -206.3, 0.62, 15], [93.5, -158.8, 0.663, -22], [54.0, -124.0, 0.695, 1]
+    18: { centerY: -340.4, lilies: [
+        [0, -340.4, 0.62, -30], [0.0, -384.6, 0.576, -7], [-41.6, -362.5, 0.598, 16],
+        [41.6, -362.5, 0.598, -21], [-41.6, -318.3, 0.642, 2], [41.6, -318.3, 0.642, 25],
+        [0.0, -296.3, 0.664, -12], [-47.0, -265.5, 0.695, 11], [-81.4, -297.2, 0.663, -26],
+        [-94.0, -340.4, 0.62, -3], [-81.4, -383.7, 0.577, 20], [-47.0, -415.3, 0.545, -17],
+        [0.0, -426.9, 0.533, 6], [47.0, -415.3, 0.545, 29], [81.4, -383.7, 0.577, -8],
+        [94.0, -340.4, 0.62, 15], [81.4, -297.2, 0.663, -22], [47.0, -265.5, 0.695, 1]
     ] }
 };
 
@@ -269,6 +290,11 @@ function spreadColors(spots, counts) {
 
 const LILY_REACH = 34;      // how far a lily's petals reach (the front ones are bigger)
 
+// The bouquet is drawn on a 300 x 300 canvas. The tied stems sit at the bottom middle, at (150, BASE_Y),
+// which leaves room under them for the point of the wrapping paper.
+const BASE_Y = 266;
+const ROOM_ABOVE = BASE_Y - 12;      // how much canvas there is above the tied stems
+
 // How big the dome of lilies is: how far it reaches to the side (rx), up and down from its middle.
 // Fillers are placed around this outline.
 function domeSize(heads, centerY) {
@@ -295,7 +321,7 @@ function fillerTip(type, place, dome) {
     if (type.role === "frame") return onDome(dome, place, 26);
     if (type.role === "spikes") return onDome(dome, place, 38 + (1 - Math.abs(place) / 90) * 14);   // the middle ones are tallest
     if (type.role === "puffs") return onDome(dome, place, 2);
-    return { x: place, y: dome.cy + dome.down + 8 + Math.abs(place) * 0.08 };                       // daisies: a row along the front
+    return { x: place, y: dome.cy + dome.down - 6 + Math.abs(place) * 0.08 };                       // daisies: a row along the front, at the wrap's opening
 }
 
 function lilyTypeFor(key) {
@@ -349,7 +375,7 @@ function fitZoom(items) {
         up = Math.max(up, -it.y + r);
         side = Math.max(side, Math.abs(it.x) + r);
     });
-    return Math.min(1.5, 270 / up, 140 / side);
+    return Math.min(1.5, ROOM_ABOVE / up, 140 / side);
 }
 
 // ---------------------------------------------------------------
@@ -362,28 +388,46 @@ function fitZoom(items) {
 // Start arranging: copy the template layout for these counts
 function startArrangement(lilyCounts, fillerCounts) {
     const template = templateItems(lilyCounts, fillerCounts);
-    return { zoom: Math.min(fitZoom(template.items), 0.8), nextId: 1, items: template.items };
+    const zoom = Math.min(fitZoom(template.items), 0.8);
+    const rimY = wrapRim(template.items);
+    return { zoom: zoom, nextId: 1, items: template.items, rimY: rimY, area: domeArea(template.items, rimY, zoom) };
 }
 
-// The part of the canvas where flowers may be placed: an oval-ish bouquet area inside the picture.
-function arrangeArea(zoom) {
-    const maxX = 140 / zoom;
-    const minY = -270 / zoom + 14;
-    const maxY = -40;
-    return { maxX: maxX, minY: minY, maxY: maxY, cx: 0, cy: (minY + maxY) / 2, rx: maxX * 1.25, ry: (maxY - minY) / 2 * 1.25 };
+// The lowest a flower's middle may go, and the top edge of the paper, for these items.
+// The paper's top edge sits just below the lowest lily (the daisies at the front are tucked into the opening).
+function wrapRim(items) {
+    let bottom = -1e9;
+    items.forEach(function (it) {
+        if (it.kind === "lily") bottom = Math.max(bottom, it.y + 47 * it.scale);
+    });
+    return Math.min(-40, bottom + 26);
 }
 
-// Keep a point inside the bouquet area (so a flower can't be dragged off the wrap)
-function clampToArea(x, y, zoom) {
-    const area = arrangeArea(zoom);
-    x = Math.max(-area.maxX, Math.min(area.maxX, x));
-    y = Math.max(area.minY, Math.min(area.maxY, y));
-    const dx = (x - area.cx) / area.rx;
-    const dy = (y - area.cy) / area.ry;
+// The area where flowers may be placed: a dome (half an oval) just above the wrap's opening.
+// It is a little bigger than the flowers are when you start, and always fits on the canvas.
+function domeArea(items, rimY, zoom) {
+    let half = 0;
+    let top = 0;
+    items.forEach(function (it) {
+        const r = it.kind === "lily" ? LILY_REACH : 16;
+        half = Math.max(half, Math.abs(it.x) + r);
+        top = Math.min(top, it.y - r);
+    });
+    const baseY = rimY - 26;                                         // a flower's middle stays above this
+    const rx = Math.min(half + 24, 140 / zoom - 6);
+    const ry = Math.min(baseY - top + 20, baseY + ROOM_ABOVE / zoom - 10);
+    return { baseY: baseY, rx: rx, ry: ry };
+}
+
+// Keep a point inside the dome (so a flower can't be dragged off the bouquet or down into the wrap)
+function clampToArea(x, y, area) {
+    y = Math.min(y, area.baseY);
+    const dx = x / area.rx;
+    const dy = (y - area.baseY) / area.ry;
     const out = Math.hypot(dx, dy);
     if (out > 1) {
-        x = area.cx + dx / out * area.rx;
-        y = area.cy + dy / out * area.ry;
+        x = dx / out * area.rx;
+        y = area.baseY + dy / out * area.ry;
     }
     return { x: x, y: y };
 }
@@ -412,11 +456,11 @@ function arrangementAdd(arrangement, group, key, lilyCounts, fillerCounts) {
         }
         let best = null;
         let bestScore = -1e9;
-        const area = arrangeArea(arrangement.zoom);
-        for (let y = area.minY; y <= -90; y += 10) {
-            for (let x = -area.maxX; x <= area.maxX; x += 10) {
-                const spot = clampToArea(x, y, arrangement.zoom);
-                if (Math.abs(spot.x - x) > 1 || Math.abs(spot.y - y) > 1) continue;
+        const area = arrangement.area;
+        for (let y = area.baseY - area.ry; y <= area.baseY; y += 8) {
+            for (let x = -area.rx; x <= area.rx; x += 8) {
+                const spot = clampToArea(x, y, area);
+                if (Math.abs(spot.x - x) > 1 || Math.abs(spot.y - y) > 1) continue;      // outside the dome
                 let gap = 60;
                 lilies.forEach(function (it) { gap = Math.min(gap, Math.hypot(it.x - x, it.y - y)); });
                 const score = gap - 0.1 * Math.hypot(x - cx, y - cy);
@@ -454,7 +498,7 @@ function arrangementAdd(arrangement, group, key, lilyCounts, fillerCounts) {
             best = tip;
         }
     });
-    const spot = clampToArea(best.x, best.y, arrangement.zoom);
+    const spot = clampToArea(best.x, best.y, arrangement.area);
     items.push({ id: id, kind: "filler", type: key, x: spot.x, y: spot.y, scale: 1, spin: 0, z: z });
 }
 
@@ -475,11 +519,27 @@ function arrangementRemove(arrangement, group, key) {
 // Drawing the items
 // ---------------------------------------------------------------
 
-// A stem from (x, y) down into the tied bundle at (bundleX, 0). Two paths: an outline and a lighter middle.
+// The shape of a stem from (x, y) down into the tied bundle at (bundleX, 0), as the text of an SVG path.
+// With a "route" ({ rimY, mouth }) the stem goes into the wrapping paper through its opening: it comes down to the
+// paper's top edge (kept inside the opening) and then runs straight down to the bundle, hidden by the paper.
+// The builder also uses this while a flower is being dragged.
+function stemPathData(x, y, bundleX, route) {
+    if (!route || y >= route.rimY) {
+        return 'M' + x.toFixed(1) + ' ' + y.toFixed(1) + ' Q' + (x + (bundleX - x) * 0.15).toFixed(1) + ' ' + (y * 0.4).toFixed(1) + ' ' + bundleX.toFixed(1) + ' 0';
+    }
+    const limit = route.mouth - 10;
+    const entry = Math.max(-limit, Math.min(limit, bundleX + (x - bundleX) * (route.rimY / y)));
+    return 'M' + x.toFixed(1) + ' ' + y.toFixed(1) + ' Q' + (x + (entry - x) * 0.1).toFixed(1) + ' ' + ((y + route.rimY) / 2).toFixed(1) + ' ' +
+        entry.toFixed(1) + ' ' + route.rimY.toFixed(1) + ' L' + bundleX.toFixed(1) + ' 0';
+}
+
+// A stem as two paths: an outline and a lighter middle.
 // The data-* values let the builder bend the stem while a flower is being dragged.
-function stemPaths(x, y, bundleX, outline, outlineWidth, color, colorWidth) {
-    const path = 'M' + x.toFixed(1) + ' ' + y.toFixed(1) + ' Q' + (x + (bundleX - x) * 0.15).toFixed(1) + ' ' + (y * 0.4).toFixed(1) + ' ' + bundleX.toFixed(1) + ' 0';
-    const data = ' class="stem-path" data-sx="' + x.toFixed(1) + '" data-sy="' + y.toFixed(1) + '" data-bundle="' + bundleX.toFixed(1) + '" fill="none" stroke-linecap="round"';
+function stemPaths(x, y, bundleX, route, outline, outlineWidth, color, colorWidth) {
+    const path = stemPathData(x, y, bundleX, route);
+    let data = ' class="stem-path" data-sx="' + x.toFixed(1) + '" data-sy="' + y.toFixed(1) + '" data-bundle="' + bundleX.toFixed(1) + '"';
+    if (route) data += ' data-rim="' + route.rimY.toFixed(1) + '" data-mouth="' + route.mouth.toFixed(1) + '"';
+    data += ' fill="none" stroke-linecap="round" stroke-linejoin="round"';
     return '<path d="' + path + '"' + data + ' stroke="' + outline + '" stroke-width="' + outlineWidth.toFixed(2) + '"/>' +
         '<path d="' + path + '"' + data + ' stroke="' + color + '" stroke-width="' + colorWidth.toFixed(2) + '"/>';
 }
@@ -489,10 +549,10 @@ function hitCircle(x, y, r) {
     return '<circle class="hit" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="rgba(0,0,0,0.001)"/>';
 }
 
-function drawLilyItem(item, bundleX) {
+function drawLilyItem(item, bundleX, route) {
     const type = lilyTypeFor(item.type);
     return '<g class="item" data-id="' + item.id + '">' +
-        stemPaths(item.x, item.y, bundleX, LEAF_LINE, 4.4, LEAF_GREEN, 2.4) +
+        stemPaths(item.x, item.y, bundleX, route, LEAF_LINE, 4.4, LEAF_GREEN, 2.4) +
         '<g class="body">' +
         '<g transform="translate(' + item.x.toFixed(1) + ' ' + item.y.toFixed(1) + ') rotate(' + item.spin + ') scale(' + item.scale.toFixed(3) + ') translate(-50 -52)">' +
         type.draw({ headOnly: true }) + '</g>' +
@@ -500,27 +560,79 @@ function drawLilyItem(item, bundleX) {
         '</g></g>';
 }
 
-// A filler: the drawing with its tip at (item.x, item.y), and its stem curving down into the bundle
-function drawFillerItem(item, bundleX) {
+// Where a filler's drawing sits: its size, the way it leans, and where its own stem starts (bx, by)
+function fillerGeometry(item) {
     const type = fillerTypeFor(item.type);
     const length = (140 - type.top) * type.scale;                      // height of the drawing
     const lean = Math.atan2(item.x, 230);                              // leans a little outward
     const ax = Math.sin(lean);
     const ay = -Math.cos(lean);                                        // the direction it points
-    const bx = item.x - ax * length;                                   // where the drawing's own stem starts
-    const by = item.y - ay * length;
+    return { type: type, length: length, lean: lean, ax: ax, ay: ay, bx: item.x - ax * length, by: item.y - ay * length };
+}
 
+// A filler: the drawing with its tip at (item.x, item.y), and its stem curving down into the bundle
+function drawFillerItem(item, bundleX, route) {
+    const g = fillerGeometry(item);
+    const type = g.type;
     let s = '<g class="item" data-id="' + item.id + '">';
-    if (by < -4) s += stemPaths(bx, by, bundleX, type.stemLine, type.stemWidth * type.scale, type.stemColor, type.stemWidth * type.scale * 0.5);
+    if (g.by < -4) s += stemPaths(g.bx, g.by, bundleX, route, type.stemLine, type.stemWidth * type.scale, type.stemColor, type.stemWidth * type.scale * 0.5);
     // the drawing is 100 x 140 with its stem at the bottom middle
-    s += '<g class="body"><g transform="translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') rotate(' + (lean * 180 / Math.PI).toFixed(1) + ') scale(' + type.scale + ') translate(-50 -140)">' + type.draw() + '</g>';
-    s += hitCircle(item.x - ax * length * 0.3, item.y - ay * length * 0.3, Math.max(16, length * 0.22));
+    s += '<g class="body"><g transform="translate(' + g.bx.toFixed(1) + ' ' + g.by.toFixed(1) + ') rotate(' + (g.lean * 180 / Math.PI).toFixed(1) + ') scale(' + type.scale + ') translate(-50 -140)">' + type.draw() + '</g>';
+    s += hitCircle(item.x - g.ax * g.length * 0.3, item.y - g.ay * g.length * 0.3, Math.max(16, g.length * 0.22));
     return s + '</g></g>';
 }
 
+// ---------------------------------------------------------------
+// The wrapping paper and the bow
+// ---------------------------------------------------------------
+
+// Where a stem starts: a lily's middle, or the bottom of a filler's own stem (null if it starts below the paper)
+function stemStart(item, rimY) {
+    if (item.kind === "lily") return item.y < rimY ? { x: item.x, y: item.y } : null;
+    const g = fillerGeometry(item);
+    return g.by < rimY && g.by < -4 ? { x: g.bx, y: g.by } : null;
+}
+
+// How wide the paper's opening is: as wide as the stems are at its top edge, plus a little
+function wrapMouth(items, bundleX, rimY) {
+    let reach = 0;
+    items.forEach(function (it) {
+        const start = stemStart(it, rimY);
+        if (!start) return;
+        const bx = bundleX[it.id];
+        reach = Math.max(reach, Math.abs(bx + (start.x - bx) * (rimY / start.y)));
+    });
+    return Math.max(48, Math.min(140, reach + 14));
+}
+
+// Draw the wrapping paper, the sash and the bow. wrap: { paper: "#hex", ribbon: "#hex" }.
+// The paper's top edge (rimY) sits just below the lowest bloom, as wide as the opening (mouth), and it narrows
+// to a point below the tied stems. The bow is tied where the paper narrows.
+function drawWrap(wrap, rimY, mouth) {
+    // drawWrapping is 200 x 220 with its top edge around y = 46, its point around y = 214,
+    // and 86 either side of the middle at the top. Stretch it to fit.
+    const sx = mouth / 86;
+    const sy = (16 - rimY) / 168;
+    const sashY = 150;                                // where the paper narrows (in the drawing)
+    const line = shade(wrap.ribbon, -0.4);
+    const band = '<path d="M57 ' + sashY + ' Q100 ' + (sashY + 13) + ' 143 ' + sashY + '" fill="none" stroke="' + line + '" stroke-width="10" stroke-linecap="round"/>' +
+        '<path d="M57 ' + sashY + ' Q100 ' + (sashY + 13) + ' 143 ' + sashY + '" fill="none" stroke="' + wrap.ribbon + '" stroke-width="6.5" stroke-linecap="round"/>';
+    const bowSize = 0.75 * Math.min(sx, sy);
+    const bowX = 0;
+    const bowY = rimY + (sashY + 6 - 46) * sy;
+
+    return '<g class="wrap" pointer-events="none">' +
+        '<g transform="translate(0 ' + rimY.toFixed(1) + ') scale(' + sx.toFixed(3) + ' ' + sy.toFixed(3) + ') translate(-100 -46)">' +
+        drawWrapping({ color: wrap.paper }) + band + '</g>' +
+        '<g transform="translate(' + (bowX - 60 * bowSize).toFixed(1) + ' ' + (bowY - 48 * bowSize).toFixed(1) + ') scale(' + bowSize.toFixed(3) + ')">' +
+        drawRibbon({ color: wrap.ribbon }) + '</g></g>';
+}
+
 // Draw a list of items (picture pieces, no <svg> tag) on a 300 x 300 canvas.
-// zoom: how much to scale it. showArea: draw a dotted line around the area flowers can be moved in.
-function drawItems(items, zoom, showArea) {
+// zoom: how much to scale it. area: draws an invisible dotted line around the area flowers can be moved in.
+// rimY: where the top edge of the wrapping paper is.
+// wrap: { paper, ribbon } colors to draw the wrapping and bow, or nothing to leave the bouquet unwrapped.
+function drawItems(items, zoom, area, wrap, rimY) {
     // tie all stems into one bundle, in left-to-right order so they don't cross
     const bundleX = {};
     const bundleWidth = Math.min(26, 8 + items.length * 1.2);
@@ -528,29 +640,33 @@ function drawItems(items, zoom, showArea) {
         bundleX[it.id] = items.length > 1 ? (i / (items.length - 1) - 0.5) * bundleWidth : 0;
     });
 
+    // with wrapping paper, the stems go in through its opening
+    const route = wrap ? { rimY: rimY, mouth: wrapMouth(items, bundleX, rimY) } : null;
+
     // draw from the back (low z) to the front (high z)
     let pictures = '';
     items.slice().sort(function (a, b) { return a.z - b.z; }).forEach(function (it) {
-        pictures += it.kind === "lily" ? drawLilyItem(it, bundleX[it.id]) : drawFillerItem(it, bundleX[it.id]);
+        pictures += it.kind === "lily" ? drawLilyItem(it, bundleX[it.id], route) : drawFillerItem(it, bundleX[it.id], route);
     });
 
-    let area = '';
-    if (showArea) {
-        // the edge of the area flowers can be moved in, as a dotted line
-        const a = arrangeArea(zoom);
+    // The dotted line around the area flowers can be moved in. It is there but invisible; the builder
+    // shows it only while a flower is being dragged.
+    let outline = '';
+    if (area) {
         const points = [];
-        for (let i = 0; i < 90; i++) {
-            const angle = i / 90 * 2 * Math.PI;
-            const edge = clampToArea(a.cx + a.rx * Math.cos(angle), a.cy + a.ry * Math.sin(angle), zoom);
-            points.push(edge.x.toFixed(1) + ' ' + edge.y.toFixed(1));
+        for (let i = 0; i <= 60; i++) {
+            const angle = Math.PI + i / 60 * Math.PI;                       // the top half of an oval
+            points.push((area.rx * Math.cos(angle)).toFixed(1) + ' ' + (area.baseY + area.ry * Math.sin(angle)).toFixed(1));
         }
-        area = '<path d="M' + points.join(' L') + ' Z" fill="none" stroke="#F8F1C4" stroke-width="1.5" stroke-dasharray="6 6" opacity="0.5"/>';
+        points.push('0 ' + area.baseY.toFixed(1).replace('-0.0', '0'));
+        outline = '<path class="area-outline" d="M' + points.join(' L') + ' Z" fill="none" stroke="#F8F1C4" stroke-width="1.5" stroke-dasharray="6 6" opacity="0"/>';
     }
 
     // Everything below the tie is trimmed flat, like a florist's cut stems.
     return '<defs><clipPath id="bouquet-trim"><rect x="-600" y="-900" width="1200" height="900"/></clipPath></defs>' +
-        '<g class="bouquet-zoom" transform="translate(150 285) scale(' + zoom.toFixed(3) + ')">' + area +
-        '<g class="bouquet-items" clip-path="url(#bouquet-trim)">' + pictures + '</g></g>';
+        '<g class="bouquet-zoom" transform="translate(150 ' + BASE_Y + ') scale(' + zoom.toFixed(3) + ')">' + outline +
+        '<g class="bouquet-items" clip-path="url(#bouquet-trim)">' + pictures + '</g>' +
+        (wrap ? drawWrap(wrap, rimY, route.mouth) : '') + '</g>';
 }
 
 // Draw the whole bouquet (picture pieces, no <svg> tag) on a 300 x 300 canvas.
@@ -558,9 +674,19 @@ function drawItems(items, zoom, showArea) {
 // fillerCounts: how many of each filler, e.g. { babys: 1, lavender: 2, ... }
 // arrangement (optional): flowers moved by hand. If it is given, it is drawn instead of the template.
 // showArea (optional): draw the dotted line around the area flowers can be moved in.
-function drawBouquet(lilyCounts, fillerCounts, arrangement, showArea) {
-    if (arrangement) return drawItems(arrangement.items, arrangement.zoom, showArea);
+// wrap (optional): { paper: "#hex", ribbon: "#hex" }. The bouquet is wrapped with these colors.
+function drawBouquet(lilyCounts, fillerCounts, arrangement, showArea, wrap) {
+    if (arrangement) {
+        return drawItems(arrangement.items, arrangement.zoom, showArea ? arrangement.area : null, wrap, arrangement.rimY);
+    }
     const template = templateItems(lilyCounts, fillerCounts);
     if (template.items.length === 0) return '';
-    return drawItems(template.items, fitZoom(template.items), false);
+    return drawItems(template.items, fitZoom(template.items), null, wrap, wrapRim(template.items));
+}
+
+// Find the colors for a wrap key and a ribbon key (falls back to the defaults)
+function wrapColors(wrapKey, ribbonKey) {
+    const paper = WRAP_COLORS.filter(function (c) { return c.key === wrapKey; })[0] || WRAP_COLORS[0];
+    const ribbon = RIBBON_COLORS.filter(function (c) { return c.key === ribbonKey; })[0] || RIBBON_COLORS[0];
+    return { paper: paper.color, ribbon: ribbon.color };
 }

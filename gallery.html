@@ -50,24 +50,31 @@
             FILLER_TYPES.forEach(function (type) { counts[type.key] = each; });
             return counts;
         }
+        const WRAPPED = wrapColors(DEFAULT_WRAP, DEFAULT_RIBBON);   // every bouquet below is wrapped
         const LILY_NUMBERS = [1, 3, 6, 9, 12, 18];
         const WITH_FILLERS = [1, 2, 3, 4, 5, 6];   // how many of each filler goes with the lilies above
 
         // Each group: a title and a list of drawings (name, draw function, which viewBox to use)
         const groups = [
             { title: "Bouquet layouts: lilies only", big: true, items: LILY_NUMBERS.map(function (n) {
-                return [n + (n === 1 ? " lily" : " lilies"), function () { return drawBouquet(lilyCounts(n), fillerCounts(0)); }, "bouquet"];
+                return [n + (n === 1 ? " lily" : " lilies"), function () { return drawBouquet(lilyCounts(n), fillerCounts(0), null, false, WRAPPED); }, "bouquet"];
             }) },
             { title: "Bouquet layouts: lilies + fillers", big: true, items: LILY_NUMBERS.map(function (n, i) {
                 return [n + (n === 1 ? " lily" : " lilies") + " + " + WITH_FILLERS[i] + " of each filler",
-                    function () { return drawBouquet(lilyCounts(n), fillerCounts(WITH_FILLERS[i])); }, "bouquet"];
+                    function () { return drawBouquet(lilyCounts(n), fillerCounts(WITH_FILLERS[i]), null, false, WRAPPED); }, "bouquet"];
+            }) },
+            { title: "Wrapping paper colors (9 lilies, a few fillers)", big: true, items: WRAP_COLORS.map(function (c) {
+                return [c.label, function () { return drawBouquet(lilyCounts(9), fillerCounts(2), null, false, wrapColors(c.key, DEFAULT_RIBBON)); }, "bouquet"];
+            }) },
+            { title: "Ribbon colors (9 lilies, a few fillers)", big: true, items: RIBBON_COLORS.map(function (c) {
+                return [c.label, function () { return drawBouquet(lilyCounts(9), fillerCounts(2), null, false, wrapColors(DEFAULT_WRAP, c.key)); }, "bouquet"];
             }) },
             { title: "Filler layouts, 1 to 6 of each (with 12 lilies)", big: true, items: [].concat.apply([], FILLER_TYPES.map(function (type) {
                 return [1, 2, 3, 4, 5, 6].map(function (count) {
                     return [type.label + " x " + count, function () {
                         const counts = fillerCounts(0);
                         counts[type.key] = count;
-                        return drawBouquet(lilyCounts(12), counts);
+                        return drawBouquet(lilyCounts(12), counts, null, false, WRAPPED);
                     }, "bouquet"];
                 });
             })) },
