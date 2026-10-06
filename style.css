@@ -321,6 +321,88 @@ select {
     color: rgba(248, 241, 196, 0.75);
 }
 
+textarea {
+    resize: none;
+    line-height: 1.4;
+}
+
+/* "12 / 30" under a text box */
+.char-count {
+    margin: 4px 4px 14px;
+    font-size: 11px;
+    text-align: right;
+}
+
+/* ---------- Gift card: hangs by the wrap in the preview ---------- */
+.preview-wrap {
+    position: relative;
+}
+
+.gift-tag {
+    position: absolute;
+    right: 14px;
+    bottom: 26px;
+    width: min(46%, 160px);
+    padding: 24px 12px 12px;
+    color: var(--mauve);
+    background: var(--cream);
+    border-radius: 14px;
+    box-shadow: 0 4px 10px rgba(90, 50, 80, 0.35);
+    transform: rotate(4deg);
+    pointer-events: none;
+}
+
+/* the punched hole at the top... */
+.gift-tag::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin-left: -5px;
+    background: #A06C91;
+    border-radius: 50%;
+}
+
+/* ...and the string that goes up toward the ribbon */
+.gift-tag::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    width: 70px;
+    height: 0;
+    border-top: 2px solid var(--cream);
+    transform-origin: 0 0;
+    transform: rotate(-125deg);
+}
+
+.gift-tag p {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.tag-name {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: 12px;
+    line-height: 1.25;
+}
+
+.tag-message {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(143, 91, 128, 0.4);
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+/* the hint shown before anything is typed */
+.tag-message.empty {
+    opacity: 0.6;
+}
+
 /* ---------- Arrange it yourself ---------- */
 .arrange-bar {
     display: flex;

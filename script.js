@@ -13,7 +13,13 @@ let currentStep = 1;
 //              "Arrange it yourself" it holds the position of every flower (see bouquet.js).
 // wrap, ribbon: the keys of the picked wrapping paper and ribbon colors (see bouquet.js).
 //               They start with a default so the bouquet is never unwrapped.
-const state = { lilies: {}, fillers: {}, arrangement: null, wrap: DEFAULT_WRAP, ribbon: DEFAULT_RIBBON };
+// name, message: what was typed for the bouquet's name and the card (both optional, may be empty).
+const state = { lilies: {}, fillers: {}, arrangement: null, wrap: DEFAULT_WRAP, ribbon: DEFAULT_RIBBON, name: "", message: "" };
+
+// The name used when nobody types one, and the length limits of the two text boxes
+const DEFAULT_NAME = "Bouquet for Kat";
+const MAX_NAME = 30;
+const MAX_MESSAGE = 120;
 
 // Is "Arrange it yourself" switched on right now? (Only for the current visit to a step.)
 let arranging = false;
@@ -36,6 +42,13 @@ const arrangeBar = document.getElementById("arrange-bar");
 const arrangeBtn = document.getElementById("arrange-btn");
 const resetBtn = document.getElementById("reset-btn");
 const arrangeHint = document.getElementById("arrange-hint");
+const nameInput = document.getElementById("name-input");
+const messageInput = document.getElementById("message-input");
+const nameCount = document.getElementById("name-count");
+const messageCount = document.getElementById("message-count");
+const giftTag = document.getElementById("gift-tag");
+const tagName = document.getElementById("tag-name");
+const tagMessage = document.getElementById("tag-message");
 
 // ---------------------------------------------------------------
 // Step navigation
@@ -185,6 +198,7 @@ function updatePickers() {
 // Show the bouquet so far in the preview box (drawBouquet is in bouquet.js)
 function renderPreview() {
     updateArrangeBar();
+    updateGiftTag();
     if (totalLilies() === 0) {
         previewBox.innerHTML = '<p class="preview-empty">Add a lily to see your bouquet!</p>';
         return;
@@ -231,6 +245,39 @@ function handleSwatchClick(event) {
 }
 wrapSwatches.addEventListener("click", handleSwatchClick);
 ribbonSwatches.addEventListener("click", handleSwatchClick);
+
+// ---------------------------------------------------------------
+// Step 4: bouquet name and card message
+// ---------------------------------------------------------------
+
+// The name to show: what was typed, or the cute default when the box is empty
+function bouquetName() {
+    return state.name.trim() || DEFAULT_NAME;
+}
+
+// Update the character counters and the gift card. The card is shown on step 4 only,
+// and not while arranging (so it never gets in the way of dragging).
+function updateGiftTag() {
+    nameCount.textContent = state.name.length + " / " + MAX_NAME;
+    messageCount.textContent = state.message.length + " / " + MAX_MESSAGE;
+
+    tagName.textContent = bouquetName();
+    const message = state.message.trim();
+    tagMessage.textContent = message || "Your message shows up here";
+    tagMessage.classList.toggle("empty", !message);
+
+    giftTag.hidden = !(currentStep === 4 && totalLilies() > 0 && !arranging);
+}
+
+// Typing changes the card right away (the bouquet itself isn't redrawn)
+nameInput.addEventListener("input", function () {
+    state.name = nameInput.value.slice(0, MAX_NAME);
+    updateGiftTag();
+});
+messageInput.addEventListener("input", function () {
+    state.message = messageInput.value.slice(0, MAX_MESSAGE);
+    updateGiftTag();
+});
 
 // ---------------------------------------------------------------
 // Arrange it yourself
@@ -342,7 +389,7 @@ previewBox.addEventListener("pointercancel", endDrag);
 // Everything needed to rebuild this bouquet, as plain data that can be saved with JSON.
 // It includes the hand-arranged positions, so a saved bouquet keeps them.
 function getBouquetData() {
-    return JSON.parse(JSON.stringify({ lilies: state.lilies, fillers: state.fillers, arrangement: state.arrangement, wrap: state.wrap, ribbon: state.ribbon }));
+    return JSON.parse(JSON.stringify({ lilies: state.lilies, fillers: state.fillers, arrangement: state.arrangement, wrap: state.wrap, ribbon: state.ribbon, name: state.name, message: state.message }));
 }
 
 // The opposite: set the bouquet from saved data
@@ -352,6 +399,10 @@ function loadBouquetData(data) {
     state.arrangement = data.arrangement || null;
     state.wrap = data.wrap || DEFAULT_WRAP;
     state.ribbon = data.ribbon || DEFAULT_RIBBON;
+    state.name = (data.name || "").slice(0, MAX_NAME);
+    state.message = (data.message || "").slice(0, MAX_MESSAGE);
+    nameInput.value = state.name;
+    messageInput.value = state.message;
     updateSwatches();
     arranging = false;
     updatePickers();

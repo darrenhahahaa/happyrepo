@@ -20,7 +20,14 @@
         </header>
 
         <!-- Small live preview of the bouquet (filled in by script.js) -->
-        <div id="preview" class="preview"></div>
+        <div class="preview-wrap">
+            <div id="preview" class="preview"></div>
+            <!-- The gift card (step 4 shows it by the wrap; script.js fills in the words) -->
+            <div id="gift-tag" class="gift-tag" hidden>
+                <p id="tag-name" class="tag-name"></p>
+                <p id="tag-message" class="tag-message"></p>
+            </div>
+        </div>
 
         <!-- "Arrange it yourself": buttons and a hint (script.js shows and hides them) -->
         <div id="arrange-bar" class="arrange-bar" hidden>
@@ -58,7 +65,13 @@
 
         <section class="step" data-step="4">
             <h2>Finishing touches</h2>
-            <p>Bouquet name and card message will go here (optional).</p>
+            <p class="hint">Both are optional. The card hangs by the wrap as you type.</p>
+            <label for="name-input">Bouquet name</label>
+            <input id="name-input" type="text" maxlength="30" placeholder="Sunday Lilies" autocomplete="off">
+            <p id="name-count" class="char-count">0 / 30</p>
+            <label for="message-input">Card message</label>
+            <textarea id="message-input" rows="4" maxlength="120" placeholder="Write something sweet for the card"></textarea>
+            <p id="message-count" class="char-count">0 / 120</p>
         </section>
 
         <section class="step" data-step="5">

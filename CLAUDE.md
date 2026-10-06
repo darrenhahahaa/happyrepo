@@ -8,7 +8,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
 1. **Lilies**: pick lily colors (white, pink stargazer, orange, yellow, blush pink) and how many of each.
 2. **Filler flowers**: add things around and between the lilies: baby's breath, eucalyptus, small daisies, lavender. Optional. Max 6 of each.
 3. **Wrapping**: pick a wrapping paper color (Cream, Blush, Sage, Lavender, Kraft) and a ribbon color (Mauve, Rose, Butter, Sage, White) from round swatches with names. The wrap and bow are drawn around the bouquet in the live preview and update right away. Defaults: Cream paper and Mauve ribbon, so the bouquet is never unwrapped (it is wrapped from step 1).
-4. **Finishing touches**: give the bouquet a name and write a card message. Both optional.
+4. **Finishing touches**: give the bouquet a name (max 30 characters) and write a card message (max 120, with a live character count). Both optional; an empty name becomes "Bouquet for Kat". A small gift card hangs by the wrap in the preview (bottom right, tilted, with a string up toward the ribbon) and updates as you type. It shows on this step only, and is hidden while arranging.
 5. **Final reveal**: show the finished bouquet drawing, big, with its name and card.
 
 - Every step has Back and Next buttons. Going back never loses choices.
