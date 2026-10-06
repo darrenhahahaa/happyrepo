@@ -690,3 +690,41 @@ function wrapColors(wrapKey, ribbonKey) {
     const ribbon = RIBBON_COLORS.filter(function (c) { return c.key === ribbonKey; })[0] || RIBBON_COLORS[0];
     return { paper: paper.color, ribbon: ribbon.color };
 }
+
+// ---------------------------------------------------------------
+// Saved bouquets (used by the builder to save, and by the main page's My bouquets)
+// ---------------------------------------------------------------
+
+// The browser's storage key, and the name used when nobody typed one
+const SAVE_KEY = "happy-lilies-bouquets";
+const DEFAULT_NAME = "Bouquet for Kat";
+
+// The list of saved bouquets. Any problem (storage blocked, broken data) gives an empty list.
+function readSavedBouquets() {
+    try {
+        const list = JSON.parse(localStorage.getItem(SAVE_KEY) || "[]");
+        return Array.isArray(list) ? list.filter(function (b) { return b && b.lilies && b.fillers; }) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+// Save the whole list. Returns true if it worked, false if the browser said no.
+function writeSavedBouquets(list) {
+    try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(list));
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// The name to show for a saved bouquet
+function savedName(b) {
+    return ((b && b.name) || "").trim() || DEFAULT_NAME;
+}
+
+// A small picture of a saved bouquet (an <svg> tag as text)
+function savedPicture(b) {
+    return makeSvg(drawBouquet(b.lilies, b.fillers, b.arrangement || null, false, wrapColors(b.wrap, b.ribbon)), "0 0 300 300");
+}

@@ -35,8 +35,8 @@ A website where people build a custom lily bouquet step by step, then see it as 
 
 ## Final reveal screen
 - **Download picture**: save the bouquet as a PNG.
-- **Save bouquet**: saves it in the browser so it shows up in a "My bouquets" list.
-- **My bouquets**: see saved bouquets, open one, use one as the starting point for a new bouquet, or delete one. It is a panel on the main page (`index.html#saved`). With no saved bouquets it shows "No bouquets yet. Make your first one!" and a Make a bouquet button. Always works, even before saving exists.
+- **Save bouquet**: saves everything (lilies, fillers, hand-arranged positions, wrap, ribbon, name, card) in the browser, and shows "Saved!". If the bouquet was opened from My bouquets and then changed, it asks: "Update it" or "Save as new". Unchanged: "Already saved!". If the browser blocks saving, it says so.
+- **My bouquets**: a grid of cards (small drawing + name) with **Open** (`builder.html?open=ID`, shows it in the reveal), **Use as starting point** (`builder.html?start=ID`, copies it into the builder at step 1; the saved original stays unchanged) and **Delete** (asks "Are you sure?" on the card first). It is a panel on the main page (`index.html#saved`). With no saved bouquets it shows "No bouquets yet. Make your first one!" and a Make a bouquet button. Always works, even before saving exists.
 - **Make another**: start over from step 1.
 
 ## Look and feel
@@ -57,7 +57,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
   - `bouquet.js`: the hand-made bouquet layouts, the code that draws a whole bouquet (`drawBouquet`), and the code for arranging by hand (`startArrangement`, `arrangementAdd`, `arrangementRemove`, `clampToArea`). No page code, so the builder and the gallery both use it. Also holds the lily and filler lists and the limits.
   - `gallery.html`: test page that shows every drawing and the bouquet layouts (1, 3, 6, 9, 12 and 18 lilies, with and without fillers, and the filler layouts 1 to 6).
 - Hosted on GitHub Pages from the `main` branch root, so all file paths must be relative.
-- Saving uses `localStorage` (key: `happy-lilies-bouquets`), wrapped in try/catch.
+- Saving uses `localStorage` (key: `happy-lilies-bouquets`), wrapped in try/catch. The save helpers (`readSavedBouquets`, `writeSavedBouquets`, `savedName`, `savedPicture`) are in `bouquet.js`, so the builder and the main page share them. Each saved bouquet is `{id, savedAt, name, message, lilies, fillers, arrangement, wrap, ribbon}`. The main page loads `flowers.js` and `bouquet.js` to draw the small pictures.
 - PNG download: draw the SVG onto a canvas, then export as PNG.
 - No backend, no API keys, no prices or payments.
 

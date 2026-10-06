@@ -76,7 +76,24 @@
 
         <section class="step" data-step="5">
             <h2>Your bouquet!</h2>
-            <p>The finished bouquet drawing will appear here.</p>
+            <!-- The big picture, the name and the card are filled in by script.js -->
+            <div id="reveal-picture" class="reveal-picture"></div>
+            <h3 id="reveal-name" class="reveal-name"></h3>
+            <p id="reveal-message" class="reveal-message" hidden></p>
+
+            <div class="reveal-actions">
+                <button id="save-btn" class="btn btn-fill" type="button">Save bouquet</button>
+                <a class="btn btn-line" href="index.html#saved">My bouquets</a>
+                <button id="again-btn" class="btn btn-line" type="button">Make another</button>
+            </div>
+            <p id="save-message" class="save-message" role="status"></p>
+
+            <!-- Shown when you save a bouquet you opened from My bouquets and then changed it -->
+            <div id="save-choice" class="save-choice" hidden>
+                <p id="save-choice-text"></p>
+                <button id="update-btn" class="btn btn-fill" type="button">Update it</button>
+                <button id="save-new-btn" class="btn btn-line" type="button">Save as new</button>
+            </div>
         </section>
 
         <!-- Back / Next buttons -->

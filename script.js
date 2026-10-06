@@ -16,8 +16,7 @@ let currentStep = 1;
 // name, message: what was typed for the bouquet's name and the card (both optional, may be empty).
 const state = { lilies: {}, fillers: {}, arrangement: null, wrap: DEFAULT_WRAP, ribbon: DEFAULT_RIBBON, name: "", message: "" };
 
-// The name used when nobody types one, and the length limits of the two text boxes
-const DEFAULT_NAME = "Bouquet for Kat";
+// The length limits of the two text boxes (the default name is in bouquet.js)
 const MAX_NAME = 30;
 const MAX_MESSAGE = 120;
 
@@ -86,6 +85,7 @@ function showStep(n) {
     // moving to another step switches arranging off (the arrangement itself is kept)
     arranging = false;
     renderPreview();
+    if (n === TOTAL_STEPS) renderReveal();
 
     updateNav();
 }
@@ -409,6 +409,90 @@ function loadBouquetData(data) {
 }
 
 // ---------------------------------------------------------------
+// Final reveal, saving, and opening saved bouquets
+// ---------------------------------------------------------------
+
+const revealPicture = document.getElementById("reveal-picture");
+const revealName = document.getElementById("reveal-name");
+const revealMessage = document.getElementById("reveal-message");
+const saveBtn = document.getElementById("save-btn");
+const againBtn = document.getElementById("again-btn");
+const saveMessage = document.getElementById("save-message");
+const saveChoice = document.getElementById("save-choice");
+const saveChoiceText = document.getElementById("save-choice-text");
+const updateBtn = document.getElementById("update-btn");
+const saveNewBtn = document.getElementById("save-new-btn");
+
+// The id of the saved bouquet this one came from (set when it was opened from My bouquets,
+// or after saving). null means it hasn't been saved yet.
+let savedId = null;
+
+// Draw the big finished bouquet with its name and card message
+function renderReveal() {
+    revealPicture.innerHTML = makeSvg(drawBouquet(state.lilies, state.fillers, state.arrangement, false, wrapColors(state.wrap, state.ribbon)), "0 0 300 300");
+    revealName.textContent = bouquetName();
+    const message = state.message.trim();
+    revealMessage.textContent = message;
+    revealMessage.hidden = !message;
+    saveMessage.textContent = "";
+    saveChoice.hidden = true;
+    saveBtn.disabled = false;
+}
+
+// Is this bouquet exactly what was saved? (Used to tell if an opened bouquet was edited.)
+function sameAsSaved(saved) {
+    const mine = getBouquetData();
+    return ["lilies", "fillers", "arrangement", "wrap", "ribbon", "name", "message"].every(function (key) {
+        return JSON.stringify(mine[key] || null) === JSON.stringify(saved[key] || null);
+    });
+}
+
+// Save as a new bouquet, or (mode "update") replace the one it was opened from
+function saveBouquet(mode) {
+    const list = readSavedBouquets();
+    const data = getBouquetData();
+    data.savedAt = Date.now();
+    if (mode === "update") {
+        data.id = savedId;
+        const at = list.findIndex(function (b) { return b.id === savedId; });
+        if (at >= 0) list[at] = data; else list.push(data);
+    } else {
+        data.id = "b" + Date.now().toString(36) + list.length;
+        list.push(data);
+    }
+    saveChoice.hidden = true;
+    if (writeSavedBouquets(list)) {
+        savedId = data.id;
+        saveMessage.textContent = mode === "update" ? "Saved! Your bouquet is updated." : "Saved! Find it in My bouquets.";
+    } else {
+        saveMessage.textContent = "Sorry, this browser wouldn't let me save. Is private browsing on?";
+    }
+}
+
+saveBtn.addEventListener("click", function () {
+    saveMessage.textContent = "";
+    const original = savedId && readSavedBouquets().filter(function (b) { return b.id === savedId; })[0];
+    if (!original) {
+        saveBouquet("new");
+    } else if (sameAsSaved(original)) {
+        saveMessage.textContent = "Already saved!";
+    } else {
+        // it was opened from My bouquets and then changed: ask what to do
+        saveChoiceText.textContent = "You changed \u201c" + savedName(original) + "\u201d. Update it, or save this as a new bouquet?";
+        saveChoice.hidden = false;
+    }
+});
+updateBtn.addEventListener("click", function () { saveBouquet("update"); });
+saveNewBtn.addEventListener("click", function () { saveBouquet("new"); });
+
+// "Make another": clear everything and start again at step 1
+againBtn.addEventListener("click", function () {
+    savedId = null;
+    loadBouquetData({ lilies: {}, fillers: {} });
+    showStep(1);
+});
+
+// ---------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------
 buildPicker(lilyList, LILY_TYPES, "lilies", "2 4 96 96");
@@ -417,4 +501,20 @@ buildSwatches(wrapSwatches, WRAP_COLORS, "wrap");
 buildSwatches(ribbonSwatches, RIBBON_COLORS, "ribbon");
 updateSwatches();
 updatePickers();
-showStep(1);
+
+// My bouquets sends us here with ?open=ID (show it in the reveal) or ?start=ID (copy it into
+// the builder at step 1). Starting from a bouquet never changes the saved original.
+const params = new URLSearchParams(location.search);
+const wantedId = params.get("open") || params.get("start");
+const wanted = wantedId && readSavedBouquets().filter(function (b) { return b.id === wantedId; })[0];
+if (wanted) {
+    loadBouquetData(wanted);
+    if (params.get("open")) {
+        savedId = wanted.id;
+        showStep(TOTAL_STEPS);
+    } else {
+        showStep(1);
+    }
+} else {
+    showStep(1);
+}

@@ -157,6 +157,56 @@
   }
   .note-lily { position: absolute; top: -44px; left: 50%; width: 88px; height: 88px; transform: translateX(-50%); }
   .note-text { margin: 16px 0 24px; font-size: 16px; line-height: 1.7; }
+  /* My bouquets: a grid of small cards, each with a picture, a name and buttons */
+  #saved { align-items: flex-start; }
+  #saved-card { margin: auto; max-width: 720px; padding: 28px 16px; }
+  .saved-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin: 0 0 22px;
+  }
+  .saved-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(90, 50, 80, 0.3);
+    border: 1px solid rgba(248, 241, 196, 0.5);
+    border-radius: 20px;
+  }
+  .saved-item svg { display: block; width: 100%; aspect-ratio: 1; }
+  .saved-name {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: 13px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .saved-item button, .saved-item a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    color: var(--cream);
+    background: transparent;
+    border: 1.5px solid var(--cream);
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .saved-item [hidden] { display: none; }
+  .saved-item .open { background: var(--cream); color: var(--mauve); }
+  .saved-item button:hover, .saved-item a:hover { background: rgba(248, 241, 196, 0.2); }
+  .saved-item .open:hover { background: #FFFAD9; }
+  .saved-sure { margin: 0; font-size: 12px; text-align: center; }
+  .saved-problem { margin: 0 0 14px; font-size: 12px; }
   .saved-close { display: inline-block; margin-top: 18px; padding: 10px; font-size: 12px; }
 
   /* The giant word */
@@ -260,6 +310,9 @@
   </div>
 </section>
 
+<!-- the bouquet drawings, so My bouquets can show small pictures of saved bouquets -->
+<script src="flowers.js"></script>
+<script src="bouquet.js"></script>
 <script>
   /* ---------- Lily colors ---------- */
   const LILY = {
@@ -290,12 +343,7 @@
   const PAPER = "#F7EEE7", RIBBON = "#A64D79", GATHER_Y = 540;
 
   /* ---------- Helpers ---------- */
-  function seeded(n) { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
-  function shade(hex, amt) {
-    const n = parseInt(hex.slice(1), 16), t = amt < 0 ? 0 : 255, p = Math.abs(amt);
-    const m = (c) => Math.round(c + (t - c) * p);
-    return "#" + ((1 << 24) | (m(n >> 16) << 16) | (m((n >> 8) & 255) << 8) | m(n & 255)).toString(16).slice(1);
-  }
+  function mainSeeded(n) { const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453; return x - Math.floor(x); }
 
   /* ---------- Drawing pieces ---------- */
   const OUTER = "M0,0 C15,-12 17,-36 0,-50 C-17,-36 -15,-12 0,0 Z";
@@ -340,9 +388,9 @@
   function babysBreath(x, y, seed) {
     let out = "";
     for (let i = 0; i < 7; i++) {
-      const dx = (seeded(seed + i) - 0.5) * 26, dy = (seeded(seed + i + 50) - 0.5) * 20;
+      const dx = (mainSeeded(seed + i) - 0.5) * 26, dy = (mainSeeded(seed + i + 50) - 0.5) * 20;
       out += `<line x1="${x}" y1="${y + 14}" x2="${(x + dx).toFixed(1)}" y2="${(y + dy).toFixed(1)}" stroke="#86A07A" stroke-width="0.8"/>
-        <circle cx="${(x + dx).toFixed(1)}" cy="${(y + dy).toFixed(1)}" r="${(2.6 + seeded(seed + i + 9) * 1.6).toFixed(1)}" fill="#FFFFFF" stroke="#E7E1DA" stroke-width="0.6"/>`;
+        <circle cx="${(x + dx).toFixed(1)}" cy="${(y + dy).toFixed(1)}" r="${(2.6 + mainSeeded(seed + i + 9) * 1.6).toFixed(1)}" fill="#FFFFFF" stroke="#E7E1DA" stroke-width="0.6"/>`;
     }
     return out;
   }
@@ -425,34 +473,63 @@
   const savedBody = document.getElementById("saved-body");
   const notePanel = document.getElementById("note");
 
-  // Read the saved bouquets (saving itself is added in build step 7). Any problem = empty list.
-  function loadSaved() {
-    try {
-      const list = JSON.parse(localStorage.getItem("happy-lilies-bouquets") || "[]");
-      return Array.isArray(list) ? list : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  // Fill the My bouquets panel: a friendly message if empty, otherwise the names
-  function fillSaved() {
-    const list = loadSaved();
+  // Fill the My bouquets panel: a friendly message if empty, otherwise a card for each bouquet.
+  // (readSavedBouquets and the other saving helpers are in bouquet.js)
+  function fillSaved(problem) {
+    const list = readSavedBouquets();
     savedBody.innerHTML = "";
+    if (problem) {
+      const p = document.createElement("p");
+      p.className = "saved-problem";
+      p.textContent = problem;
+      savedBody.appendChild(p);
+    }
     if (list.length === 0) {
-      savedBody.innerHTML = `<svg class="saved-lily" viewBox="-60 -60 120 120" aria-hidden="true">${gradients()}${lily("blush", 0, 0, 1.1, 0)}</svg>
-        <p class="saved-empty">No bouquets yet.<br>Make your first one!</p>`;
+      savedBody.insertAdjacentHTML("beforeend", `<svg class="saved-lily" viewBox="-60 -60 120 120" aria-hidden="true">${gradients()}${lily("blush", 0, 0, 1.1, 0)}</svg>
+        <p class="saved-empty">No bouquets yet.<br>Make your first one!</p>`);
       return;
     }
-    // just the names for now; opening, reusing and deleting come in build step 7
-    const ul = document.createElement("ul");
-    ul.className = "saved-list";
-    list.forEach(function (b) {
-      const li = document.createElement("li");
-      li.textContent = (b && b.name) || "Untitled bouquet";
-      ul.appendChild(li);
+    const grid = document.createElement("div");
+    grid.className = "saved-grid";
+    list.forEach(function (b) { grid.appendChild(savedCard(b)); });
+    savedBody.appendChild(grid);
+  }
+
+  // One card: picture, name, and the buttons Open / Use as starting point / Delete
+  function savedCard(b) {
+    const card = document.createElement("div");
+    card.className = "saved-item";
+    let picture = "";
+    try { picture = savedPicture(b); } catch (e) { /* a broken bouquet just has no picture */ }
+    const id = encodeURIComponent(b.id || "");
+    card.innerHTML = picture + '<p class="saved-name"></p>' +
+      '<a class="open" href="builder.html?open=' + id + '">Open</a>' +
+      '<a href="builder.html?start=' + id + '">Use as starting point</a>' +
+      '<button type="button" class="ask-delete">Delete</button>';
+    card.querySelector(".saved-name").textContent = savedName(b);   // textContent: typed names can't break the page
+
+    // Delete asks "Are you sure?" first
+    card.querySelector(".ask-delete").addEventListener("click", function () {
+      card.querySelectorAll("a, .ask-delete").forEach(function (el) { el.hidden = true; });
+      const sure = document.createElement("p");
+      sure.className = "saved-sure";
+      sure.textContent = "Are you sure?";
+      const yes = document.createElement("button");
+      yes.type = "button";
+      yes.textContent = "Yes, delete";
+      const no = document.createElement("button");
+      no.type = "button";
+      no.textContent = "Keep it";
+      no.className = "open";
+      card.append(sure, yes, no);
+      no.focus();
+      no.addEventListener("click", function () { fillSaved(); });
+      yes.addEventListener("click", function () {
+        const left = readSavedBouquets().filter(function (x) { return x.id !== b.id; });
+        fillSaved(writeSavedBouquets(left) ? "" : "Sorry, this browser wouldn't let me delete it.");
+      });
     });
-    savedBody.appendChild(ul);
+    return card;
   }
 
   // Show the panel that matches the end of the address (#saved or #note), or neither
