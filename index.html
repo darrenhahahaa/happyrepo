@@ -14,6 +14,7 @@
     --panel: rgba(143, 91, 128, 0.92);
     --mono: "Space Mono", ui-monospace, Menlo, monospace;
     --display: "Unbounded", "Arial Black", system-ui, sans-serif;
+    --cat-w: clamp(84px, 11vw, 170px);   /* how wide the cats on the letters are */
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -224,6 +225,101 @@
   }
 
   #word { display: inline-block; }
+
+  /* The cats on top of the letters. JS sets --cap-top (where the tops of the letters are). */
+  .wordwrap { position: relative; }
+  .cats { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .cat {
+    position: absolute;
+    top: var(--cap-top, 0);
+    width: var(--cat-w);
+    aspect-ratio: 120 / 190;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    transform: translateY(calc(-71.6% + 1px));   /* paws (136 of 190) rest on the letters */
+  }
+  .cat-left { left: 1.5%; }
+  .cat-right { right: 1.5%; }
+  .cat svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+  /* the tiny name label: on hover, keyboard focus, or for a moment after a tap */
+  .cat-name {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    padding: 2px 8px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: var(--cream);
+    background: var(--panel);
+    border-radius: 999px;
+    opacity: 0;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+  }
+  .cat:hover .cat-name, .cat:focus-visible .cat-name, .cat.show .cat-name { opacity: 1; }
+
+  /* slow tail swish */
+  .tail { animation: swish 4s ease-in-out infinite alternate; }
+  @keyframes swish {
+    from { transform: rotate(-7deg); }
+    to { transform: rotate(9deg); }
+  }
+  /* blink: the lid closes from the top and opens again */
+  .lid { opacity: 0; transform: scaleY(0.05); }
+  .blinking .lid { animation: blink 0.28s ease-in-out; }
+  @keyframes blink {
+    0% { opacity: 0; transform: scaleY(0.05); }
+    10% { opacity: 1; transform: scaleY(0.3); }
+    48% { opacity: 1; transform: scaleY(1); }
+    90% { opacity: 1; transform: scaleY(0.3); }
+    100% { opacity: 0; transform: scaleY(0.05); }
+  }
+  /* ear twitch */
+  .twitch { animation: twitch 0.5s ease-in-out; }
+  .ear-r.twitch { animation-name: twitch-r; }
+  @keyframes twitch {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-9deg); }
+    55% { transform: rotate(4deg); }
+  }
+  @keyframes twitch-r {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(9deg); }
+    55% { transform: rotate(-4deg); }
+  }
+  /* tap: tilt the head */
+  .tilt .head { animation: tilt 1.8s ease-in-out; }
+  @keyframes tilt {
+    0%, 100% { transform: rotate(0); }
+    18%, 72% { transform: rotate(-10deg); }
+  }
+  /* tap: a small heart floats up */
+  .heart {
+    position: absolute;
+    left: 50%;
+    top: 14%;
+    margin-left: -7px;
+    font-size: 16px;
+    line-height: 1;
+    color: #E2477F;
+    text-shadow: 0 0 3px #FFFFFF;
+    pointer-events: none;
+    animation: heart-up 1.4s ease-out forwards;
+  }
+  @keyframes heart-up {
+    0% { transform: translateY(0) scale(0.6); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(-46px) scale(1.1); opacity: 0; }
+  }
   .mbr { display: none; }
 
   /* Falling petals */
@@ -243,6 +339,11 @@
     100% { transform: translate(var(--drift), 110vh) rotate(540deg); }
   }
 
+  @media (min-width: 701px) {
+    .blurb.left { bottom: calc(3vh + var(--cat-w) * 1.25); }
+    .actions { bottom: calc(3vh + var(--cat-w) * 1.25); }
+  }
+
   @media (max-width: 700px) {
     nav { font-size: 11px; flex-wrap: wrap; gap: 6px 12px; }
     .blurb.mid { display: none; }
@@ -256,6 +357,8 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .tail, .tilt .head, .twitch, .blinking .lid { animation: none; }
+    .heart { animation: none; opacity: 0.9; transform: translateY(-24px); transition: opacity 1s ease 0.4s; }
     .sway { animation: none; }
     .petal { display: none; }
     .layer { transition: none; }
@@ -284,7 +387,11 @@
     </div>
   </div>
 
-  <h1 class="word"><span id="word">LILIES<br class="mbr"> FOR KAT</span></h1>
+  <div class="wordwrap">
+    <h1 class="word"><span id="word">LILIES<br class="mbr"> FOR KAT</span></h1>
+    <!-- Pika (left) and Chocolate (right) sit on the letters. cats.js draws them. -->
+    <div class="cats" id="cats"></div>
+  </div>
 </div>
 
 <!-- MY BOUQUETS: shown when the address ends in #saved. Filled in by the script below. -->
@@ -313,6 +420,7 @@
 <!-- the bouquet drawings, so My bouquets can show small pictures of saved bouquets -->
 <script src="flowers.js"></script>
 <script src="bouquet.js"></script>
+<script src="cats.js"></script>
 <script>
   /* ---------- Lily colors ---------- */
   const LILY = {
@@ -466,6 +574,7 @@
     const h1 = word.parentElement;
     h1.style.fontSize = "100px";
     h1.style.fontSize = (100 * h1.clientWidth / word.offsetWidth) * 0.99 + "px";
+    placeCats();   // the cats sit on the tops of the letters, which moved
   }
 
   /* ---------- My bouquets panel and the note for Kat ---------- */
@@ -557,6 +666,7 @@
   /* ---------- Start ---------- */
   buildBouquet();
   addPetals();
+  initCats();
   fitWord();
   document.fonts.ready.then(fitWord);
   window.addEventListener("resize", fitWord);
