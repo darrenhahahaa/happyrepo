@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lilies for Kat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- BOUQUET BUILDER (the main page, index.html, links here) -->
+    <main id="builder" class="app">
+        <!-- Header: site name + which step we're on -->
+        <header class="app-header">
+            <a class="home-link" href="index.html">&larr; Home</a>
+            <h1>Lilies for Kat 🌸</h1>
+            <p id="step-label" class="step-label">Step 1 of 5</p>
+        </header>
+
+        <!-- Small live preview of the bouquet (filled in by script.js) -->
+        <div id="preview" class="preview"></div>
+
+        <!-- The 5 steps. Only one is shown at a time. -->
+        <section class="step" data-step="1">
+            <h2>Pick your lilies</h2>
+            <p class="hint">Choose how many of each color. You can have up to 18 lilies.</p>
+            <!-- One row per lily color is built by script.js -->
+            <div id="lily-list"></div>
+            <p id="lily-total" class="lily-total">Lilies: 0 of 18</p>
+            <p id="lily-message" class="lily-message">Add at least 1 lily to continue.</p>
+        </section>
+
+        <section class="step" data-step="2">
+            <h2>Add filler flowers</h2>
+            <p class="hint">These go around your lilies. They're optional, so 0 is fine.</p>
+            <!-- One row per filler is built by script.js -->
+            <div id="filler-list"></div>
+        </section>
+
+        <section class="step" data-step="3">
+            <h2>Choose wrapping</h2>
+            <p>Wrapping paper and ribbon colors will go here.</p>
+        </section>
+
+        <section class="step" data-step="4">
+            <h2>Finishing touches</h2>
+            <p>Bouquet name and card message will go here (optional).</p>
+        </section>
+
+        <section class="step" data-step="5">
+            <h2>Your bouquet!</h2>
+            <p>The finished bouquet drawing will appear here.</p>
+        </section>
+
+        <!-- Back / Next buttons -->
+        <nav class="nav-buttons">
+            <button id="back-btn" type="button">Back</button>
+            <button id="next-btn" type="button">Next</button>
+        </nav>
+    </main>
+
+    <script src="flowers.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -4,9 +4,9 @@
 A website where people build a custom lily bouquet step by step, then see it as a cute drawn picture at the end. It lives in the `happyrepo` repo and is hosted on GitHub Pages.
 
 ## User flow (step by step)
-0. **Main page** (shows first): big title "Lilies for Kat", a short sweet message, a cute lily bouquet drawing that blooms when the page loads (no animation if the device asks for reduced motion), and a **Make a bouquet** button that starts step 1. A "My bouquets" link is there too, hidden until saving exists (build step 7). The site is a gift for Kat, whose favorite flower is the lily.
+0. **Main page** (`index.html`, shows first): the design from the old `main-page.html`: big "LILIES FOR KAT" word, a swaying bouquet that changes colors, falling petals. Two pill buttons side by side (on phones, near the top under the nav): **Make a bouquet** (filled cream, opens `builder.html` at step 1) and **My bouquets** (outlined cream, opens the saved bouquets list). The nav links do the same things. The site is a gift for Kat, whose favorite flower is the lily.
 1. **Lilies**: pick lily colors (white, pink stargazer, orange, yellow, blush pink) and how many of each.
-2. **Filler flowers**: add things around the lilies: baby's breath, eucalyptus, small daisies, lavender. Optional.
+2. **Filler flowers**: add things tucked between the lilies: baby's breath, eucalyptus, small daisies, lavender. Optional.
 3. **Wrapping**: pick a wrapping paper color and a ribbon color.
 4. **Finishing touches**: give the bouquet a name and write a card message. Both optional.
 5. **Final reveal**: show the finished bouquet drawing, big, with its name and card.
@@ -17,13 +17,16 @@ A website where people build a custom lily bouquet step by step, then see it as 
 
 ## Rules
 - A bouquet must always have at least 1 lily. Next is disabled on step 1 until there is one.
-- Lilies are the only main flower. Other flowers are fillers around them.
+- Lilies are the only main flower. Other flowers are fillers.
+- Fillers go between the lilies, in the gaps, and are drawn behind the lilies so they peek out and never cover a bloom. Each filler has its own job: baby's breath = small clusters poking just above the lilies, lavender = thin spikes between lilies, daisies = small, in the gaps, slightly lower, eucalyptus = mostly at the back and edges, framing the bouquet.
+- All stems (lilies and fillers) come together at one point, where the wrapping gathers them.
+- Every flower keeps its own spot. Adding one flower must not rearrange the others.
 - Max 18 lilies.
 
 ## Final reveal screen
 - **Download picture**: save the bouquet as a PNG.
 - **Save bouquet**: saves it in the browser so it shows up in a "My bouquets" list.
-- **My bouquets**: see saved bouquets, open one, use one as the starting point for a new bouquet, or delete one.
+- **My bouquets**: see saved bouquets, open one, use one as the starting point for a new bouquet, or delete one. It is a panel on the main page (`index.html#saved`). With no saved bouquets it shows "No bouquets yet. Make your first one!" and a Make a bouquet button. Always works, even before saving exists.
 - **Make another**: start over from step 1.
 
 ## Look and feel
@@ -33,8 +36,12 @@ A website where people build a custom lily bouquet step by step, then see it as 
 
 ## Tech
 - Plain HTML, CSS, and JavaScript. No frameworks, no build step, no npm.
-- Files: `index.html`, `style.css`, `script.js`, `flowers.js` (all SVG drawings: lilies, fillers, wrapping, ribbon), `gallery.html` (test page that shows every drawing). The main page lives inside `index.html` (`#welcome`); the builder is `#builder`, and `script.js` switches between them.
-- The current `index.html` is an older one-page version. Its lily drawing code can be reused.
+- Files:
+  - `index.html`: the main page. It has its own styles and script inline (so it keeps its own look: cream text on a mauve gradient, Space Mono and Unbounded fonts) and does not use `style.css` or `script.js`. It also holds the "My bouquets" panel.
+  - `builder.html`: the step-by-step bouquet builder. Uses `style.css`, `flowers.js` and `script.js`.
+  - `style.css`, `script.js`: the builder's styles and logic.
+  - `flowers.js`: all SVG drawings for the builder: lilies, fillers, wrapping, ribbon.
+  - `gallery.html`: test page that shows every drawing.
 - Hosted on GitHub Pages from the `main` branch root, so all file paths must be relative.
 - Saving uses `localStorage` (key: `happy-lilies-bouquets`), wrapped in try/catch.
 - PNG download: draw the SVG onto a canvas, then export as PNG.

@@ -204,101 +204,15 @@ body {
     opacity: 0.8;
 }
 
-/* ---------- Main page (welcome) ---------- */
 /* Makes the hidden attribute always win, even on elements that set display */
 [hidden] {
     display: none !important;
 }
 
-.welcome {
-    max-width: 480px;
-    margin: 0 auto;
-    padding: 24px 16px 32px;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.welcome-title {
-    margin: 0 0 8px;
-    font-size: clamp(2.4rem, 11vw, 3.4rem);
-    line-height: 1.05;
+/* Small link back to the main page */
+.home-link {
+    display: inline-block;
+    margin-top: 4px;
     color: var(--accent-dark);
-    text-shadow: 3px 3px 0 var(--soft);
-}
-
-.welcome-art {
-    width: min(82vw, 340px);
-    margin: 0 auto;
-}
-
-.welcome-art svg {
-    display: block;
-    width: 100%;
-    height: auto;
-}
-
-.welcome-message {
-    margin: 8px 8px 20px;
-    font-size: 1.1rem;
-    line-height: 1.5;
-}
-
-/* Big round main button */
-.primary-btn {
-    padding: 16px 36px;
-    font-size: 1.15rem;
-    font-family: inherit;
-    color: white;
-    background: var(--accent);
-    border: none;
-    border-radius: 999px;
-    box-shadow: 0 4px 0 var(--accent-dark);
-    cursor: pointer;
-}
-
-.primary-btn:hover {
-    background: var(--accent-dark);
-}
-
-.primary-btn:active {
-    transform: translateY(2px);
-    box-shadow: 0 2px 0 var(--accent-dark);
-}
-
-/* Plain text-style link button */
-.link-btn {
-    margin-top: 16px;
-    padding: 8px 12px;
-    font-size: 1rem;
-    font-family: inherit;
-    color: var(--accent-dark);
-    background: none;
-    border: none;
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-/* The one animation: each lily blooms open when the page loads.
-   Without an animation the lilies are simply shown fully open. */
-.bloom {
-    transform-box: fill-box;
-    transform-origin: center;
-    animation: bloom 1.3s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
-    animation-delay: var(--delay, 0s);
-}
-
-@keyframes bloom {
-    from { opacity: 0; transform: scale(0.15) rotate(-40deg); }
-    to   { opacity: 1; transform: scale(1) rotate(0deg); }
-}
-
-/* People who ask their device for less motion get no animation */
-@media (prefers-reduced-motion: reduce) {
-    .bloom {
-        animation: none;
-    }
+    font-size: 0.95rem;
 }
