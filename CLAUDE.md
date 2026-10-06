@@ -18,15 +18,17 @@ A website where people build a custom lily bouquet step by step, then see it as 
 ## Rules
 - A bouquet must always have at least 1 lily. Next is disabled on step 1 until there is one.
 - Lilies are the only main flower. Other flowers are fillers.
-- The bouquet must look clean and organized, and every flower can be seen. Lilies sit in neat rings like a rounded dome: one in the middle, then a ring of 6, then an outer ring of up to 11. Front lilies are a bit lower and bigger, back ones a bit higher and smaller. They may overlap a little at the edges, but most of each bloom always shows. Lilies are added in left/right pairs so it stays balanced.
+- The bouquet must look clean and organized, and every flower can be seen. Lilies sit in neat rings like a rounded dome: one in the middle, then a ring of 6, then an outer ring of up to 11. Front lilies are a bit lower and bigger, back ones a bit higher and smaller. They may overlap a little at the edges, but most of each bloom always shows. Every layout is balanced left to right.
 - Fillers go in clear zones (all drawn behind the lilies, never covering a bloom), roughly symmetrical left to right:
   - eucalyptus: a neat frame around the back and sides
   - lavender: a few spikes spaced evenly along the back, poking above the lilies
   - baby's breath: small puffs tucked into the gaps on the edge, just peeking out
   - daisies: a neat row along the front lower edge
 - All stems (lilies and fillers) are tied into one tight bundle at the bottom, where the wrapping gathers them. Stems curve neatly into it and are trimmed flat. No long messy stems.
-- Every flower keeps its own spot. Adding one flower must not rearrange the others.
-- The whole bouquet scales down a little as flowers are added so it always fits. Small random tilts and size differences use a seeded (repeatable) random, so the bouquet never reshuffles on a click.
+- Layouts are hand-made, not automatic. `bouquet.js` has a fixed table with one arrangement for every number of lilies (1 to 18, `LILY_LAYOUTS`) and one for every number of each filler (1 to 6, `FILLER_LAYOUTS`). To change how a bouquet looks, edit the numbers in those tables. Adding a flower switches to the next layout, so the flowers can move a little.
+- Lily colors are spread out evenly (same colors as far apart as possible, not clumped), worked out the same way every time.
+- No randomness anywhere in the layout: the same choices always give exactly the same bouquet.
+- The whole bouquet scales down a little as flowers are added so it always fits.
 - Max 18 lilies.
 
 ## Final reveal screen
@@ -47,10 +49,11 @@ A website where people build a custom lily bouquet step by step, then see it as 
 - Plain HTML, CSS, and JavaScript. No frameworks, no build step, no npm.
 - Files:
   - `index.html`: the main page. It has its own styles and script inline and does not use `style.css` or `script.js`. It also holds two panels that open from the address: "My bouquets" (`#saved`) and "A note for Kat" (`#note`, a card with her note, exact words fixed: do not edit the wording).
-  - `builder.html`: the step-by-step bouquet builder, styled to match the main page. Uses `style.css`, `flowers.js` and `script.js`.
+  - `builder.html`: the step-by-step bouquet builder, styled to match the main page. Uses `style.css`, `flowers.js`, `bouquet.js` and `script.js`.
   - `style.css`, `script.js`: the builder's styles (the main page look, see Look and feel) and logic. `gallery.html` uses `style.css` too.
   - `flowers.js`: all SVG drawings for the builder: lilies, fillers, wrapping, ribbon.
-  - `gallery.html`: test page that shows every drawing.
+  - `bouquet.js`: the hand-made bouquet layouts and the code that draws a whole bouquet (`drawBouquet`). No page code, so the builder and the gallery both use it. Also holds the lily and filler lists and the limits.
+  - `gallery.html`: test page that shows every drawing and the bouquet layouts (1, 3, 6, 9, 12 and 18 lilies, with and without fillers, and the filler layouts 1 to 6).
 - Hosted on GitHub Pages from the `main` branch root, so all file paths must be relative.
 - Saving uses `localStorage` (key: `happy-lilies-bouquets`), wrapped in try/catch.
 - PNG download: draw the SVG onto a canvas, then export as PNG.
