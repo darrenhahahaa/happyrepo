@@ -1,4 +1,4 @@
-# Happy Lilies: Lily Bouquet Builder
+# Lilies for Kat : Lily Bouquet Builder
 
 ## What it is
 A website where people build a custom lily bouquet step by step, then see it as a cute drawn picture at the end. It lives in the `happyrepo` repo and is hosted on GitHub Pages.
