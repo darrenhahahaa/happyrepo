@@ -4,6 +4,9 @@ const TOTAL_STEPS = 5;
 // Most lilies allowed in one bouquet
 const MAX_LILIES = 18;
 
+// Most of each filler flower (so the preview never gets too crowded)
+const MAX_EACH_FILLER = 6;
+
 // The lily colors you can pick. "draw" is the drawing function from flowers.js.
 const LILY_TYPES = [
     { key: "white", label: "White", draw: drawWhiteLily },
@@ -13,13 +16,23 @@ const LILY_TYPES = [
     { key: "blush", label: "Blush pink", draw: drawBlushLily }
 ];
 
+// The filler flowers you can add (all optional)
+const FILLER_TYPES = [
+    { key: "babys", label: "Baby's breath", draw: drawBabysBreath },
+    { key: "eucalyptus", label: "Eucalyptus", draw: drawEucalyptus },
+    { key: "daisies", label: "Small daisies", draw: drawDaisies },
+    { key: "lavender", label: "Lavender", draw: drawLavender }
+];
+
 // Which step we're on (starts at 1)
 let currentStep = 1;
 
 // All the bouquet choices live here, so Back never loses them.
-// lilies: how many of each color, e.g. { white: 2, orange: 1, ... }
-const state = { lilies: {} };
+// lilies:  how many of each lily color, e.g. { white: 2, orange: 1, ... }
+// fillers: how many of each filler,     e.g. { babys: 1, lavender: 2, ... }
+const state = { lilies: {}, fillers: {} };
 LILY_TYPES.forEach(function (type) { state.lilies[type.key] = 0; });
+FILLER_TYPES.forEach(function (type) { state.fillers[type.key] = 0; });
 
 // Grab the page elements we need
 const steps = document.querySelectorAll(".step");
@@ -30,6 +43,7 @@ const previewBox = document.getElementById("preview");
 const lilyList = document.getElementById("lily-list");
 const lilyTotalText = document.getElementById("lily-total");
 const lilyMessage = document.getElementById("lily-message");
+const fillerList = document.getElementById("filler-list");
 
 // ---------------------------------------------------------------
 // Step navigation
@@ -77,54 +91,68 @@ nextBtn.addEventListener("click", function () {
 });
 
 // ---------------------------------------------------------------
-// Step 1: lily picker
+// Pickers (step 1 lilies and step 2 fillers work the same way)
 // ---------------------------------------------------------------
 
-// Build one row per lily color: a small picture, the name, and - / + buttons
-function buildLilyPicker() {
-    LILY_TYPES.forEach(function (type) {
+// Build one row per flower: a small picture, the name, and - / + buttons.
+// group is "lilies" or "fillers" (the part of `state` these counts live in).
+function buildPicker(container, types, group, thumbBox) {
+    types.forEach(function (type) {
         const row = document.createElement("div");
         row.className = "lily-row";
         row.innerHTML =
-            '<div class="lily-thumb">' + makeSvg(type.draw({ headOnly: true }), "2 4 96 96") + '</div>' +
+            '<div class="lily-thumb">' + makeSvg(type.draw({ headOnly: true }), thumbBox) + '</div>' +
             '<span class="lily-name">' + type.label + '</span>' +
             '<div class="counter">' +
-            '<button type="button" class="count-btn" data-key="' + type.key + '" data-change="-1" aria-label="Fewer ' + type.label + ' lilies">&minus;</button>' +
+            '<button type="button" class="count-btn" data-group="' + group + '" data-key="' + type.key + '" data-change="-1" aria-label="Fewer ' + type.label + '">&minus;</button>' +
             '<span class="count" id="count-' + type.key + '">0</span>' +
-            '<button type="button" class="count-btn" data-key="' + type.key + '" data-change="1" aria-label="More ' + type.label + ' lilies">+</button>' +
+            '<button type="button" class="count-btn" data-group="' + group + '" data-key="' + type.key + '" data-change="1" aria-label="More ' + type.label + '">+</button>' +
             '</div>';
-        lilyList.appendChild(row);
+        container.appendChild(row);
     });
 }
 
-// One listener handles every - and + button
-lilyList.addEventListener("click", function (event) {
+// Can this flower go up by one? Lilies share a total limit; each filler has its own.
+function canAdd(group, key) {
+    if (group === "lilies") return totalLilies() < MAX_LILIES;
+    return state.fillers[key] < MAX_EACH_FILLER;
+}
+
+// One listener handles every - and + button in both pickers
+function handleCountClick(event) {
     const btn = event.target.closest(".count-btn");
     if (!btn) return;
+    const group = btn.dataset.group;
     const key = btn.dataset.key;
     const change = Number(btn.dataset.change);
-    const newCount = state.lilies[key] + change;
 
-    // Stay between 0 and the 18-lily limit
-    if (newCount < 0) return;
-    if (change > 0 && totalLilies() >= MAX_LILIES) return;
+    // Stay between 0 and the limit
+    if (state[group][key] + change < 0) return;
+    if (change > 0 && !canAdd(group, key)) return;
 
-    state.lilies[key] = newCount;
-    updateLilyPicker();
-});
+    state[group][key] += change;
+    updatePickers();
+}
+lilyList.addEventListener("click", handleCountClick);
+fillerList.addEventListener("click", handleCountClick);
 
-// Refresh the numbers, the buttons, the message and the preview
-function updateLilyPicker() {
+// Refresh the numbers, the buttons, the messages and the preview
+function updatePickers() {
     const total = totalLilies();
 
     LILY_TYPES.forEach(function (type) {
         document.getElementById("count-" + type.key).textContent = state.lilies[type.key];
     });
+    FILLER_TYPES.forEach(function (type) {
+        document.getElementById("count-" + type.key).textContent = state.fillers[type.key];
+    });
 
-    // - is off at 0, + is off when the bouquet is full
-    lilyList.querySelectorAll(".count-btn").forEach(function (btn) {
+    // - is off at 0, + is off at the limit
+    document.querySelectorAll(".count-btn").forEach(function (btn) {
         const isMinus = Number(btn.dataset.change) < 0;
-        btn.disabled = isMinus ? state.lilies[btn.dataset.key] === 0 : total >= MAX_LILIES;
+        btn.disabled = isMinus
+            ? state[btn.dataset.group][btn.dataset.key] === 0
+            : !canAdd(btn.dataset.group, btn.dataset.key);
     });
 
     lilyTotalText.textContent = "Lilies: " + total + " of " + MAX_LILIES;
@@ -140,17 +168,24 @@ function updateLilyPicker() {
 // Live preview
 // ---------------------------------------------------------------
 
-// Draw the bouquet so far. Right now it only has lilies.
-function renderPreview() {
-    // Make one flat list of lily colors, mixing the colors together
+// Turn counts into one flat list that mixes the types together,
+// e.g. { white: 2, orange: 1 } becomes [white, orange, white]
+function mixedList(types, counts) {
     const list = [];
-    for (let round = 0; list.length < totalLilies(); round++) {
-        LILY_TYPES.forEach(function (type) {
-            if (state.lilies[type.key] > round) list.push(type);
+    let total = 0;
+    types.forEach(function (type) { total += counts[type.key]; });
+    for (let round = 0; list.length < total; round++) {
+        types.forEach(function (type) {
+            if (counts[type.key] > round) list.push(type);
         });
     }
+    return list;
+}
 
-    const n = list.length;
+// Draw the bouquet so far: fillers at the back, then the lilies on top
+function renderPreview() {
+    const lilies = mixedList(LILY_TYPES, state.lilies);
+    const n = lilies.length;
     if (n === 0) {
         previewBox.innerHTML = '<p class="preview-empty">Add a lily to see your bouquet!</p>';
         return;
@@ -164,7 +199,7 @@ function renderPreview() {
     const spacing = 28 * size;
 
     // Spread the flower heads in a round dome (a sunflower-style spiral)
-    const heads = list.map(function (type, i) {
+    const heads = lilies.map(function (type, i) {
         const r = spacing * Math.sqrt(i);
         const turn = i * 137.5 * Math.PI / 180;
         return {
@@ -175,6 +210,47 @@ function renderPreview() {
         };
     });
 
+    // ----- fillers (drawn first, so they sit behind the lilies) -----
+    // The lily dome is roughly an oval around (150, 130). Fillers stick out past its edge.
+    const reach = spacing * Math.sqrt(n - 1);
+    const domeW = reach + 47 * size;
+    const domeH = reach * 0.75 + 47 * size;
+    function insideDome(x, y) {
+        const dx = (x - 150) / domeW;
+        const dy = (y - 130) / domeH;
+        return dx * dx + dy * dy <= 1;
+    }
+
+    const fillers = mixedList(FILLER_TYPES, state.fillers);
+    const m = fillers.length;
+    // Fan the fillers out evenly from -55 to +55 degrees. A stride mixes the kinds up.
+    let stride = Math.max(1, Math.round(m / 3));
+    while (m > 1 && gcd(stride, m) !== 1) stride++;
+
+    let fillerSvg = '';
+    fillers.forEach(function (type, i) {
+        const slot = (i * stride) % m;
+        const degrees = m === 1 ? 20 : -55 + 110 * slot / (m - 1);
+        const a = degrees * Math.PI / 180;
+
+        // walk out from the base along this angle to find where the lily dome ends
+        let edge = 0;
+        for (let d = 0; d < 400; d += 2) {
+            if (insideDome(baseX + d * Math.sin(a), baseY - d * Math.cos(a))) edge = d;
+        }
+        // reach a bit past the dome (a different amount each time so it looks natural)
+        let tip = (edge > 0 ? edge : 120) + 22 + (i % 3) * 9;
+        // never go off the edges of the picture
+        tip = Math.min(tip, 275, Math.abs(Math.sin(a)) > 0.01 ? 120 / Math.abs(Math.sin(a)) : 275);
+        const scale = Math.max(0.5, tip / 128);
+
+        // the drawing is 100 x 140 with its stem at the bottom middle, so
+        // turn it around that point and place the stem at the base
+        fillerSvg += '<g transform="translate(' + baseX + ' ' + baseY + ') rotate(' + degrees.toFixed(1) + ') scale(' + scale.toFixed(3) + ') translate(-50 -140)">' +
+            type.draw() + '</g>';
+    });
+
+    // ----- lily stems and heads -----
     let stems = '';
     let flowers = '';
     heads.forEach(function (h) {
@@ -189,12 +265,18 @@ function renderPreview() {
             h.type.draw({ headOnly: true }) + '</g>';
     });
 
-    previewBox.innerHTML = makeSvg(stems + flowers, "0 0 300 300");
+    previewBox.innerHTML = makeSvg(fillerSvg + stems + flowers, "0 0 300 300");
+}
+
+// Greatest common divisor (used to pick the stride above)
+function gcd(a, b) {
+    return b === 0 ? a : gcd(b, a % b);
 }
 
 // ---------------------------------------------------------------
 // Start
 // ---------------------------------------------------------------
-buildLilyPicker();
-updateLilyPicker();
+buildPicker(lilyList, LILY_TYPES, "lilies", "2 4 96 96");
+buildPicker(fillerList, FILLER_TYPES, "fillers", "0 0 100 140");
+updatePickers();
 showStep(1);
