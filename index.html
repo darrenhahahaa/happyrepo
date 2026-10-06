@@ -3,13 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Happy Lilies</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
- <h1>Welcome to happyrepo 😄</h1>
-  <p>This site is very happy.</p>
-  <button onclick="alert('Hi!')">Click me</button>
+    <main class="app">
+        <!-- Header: site name + which step we're on -->
+        <header class="app-header">
+            <h1>Happy Lilies 🌸</h1>
+            <p id="step-label" class="step-label">Step 1 of 5</p>
+        </header>
 
+        <!-- The 5 steps. Only one is shown at a time. -->
+        <section class="step" data-step="1">
+            <h2>Pick your lilies</h2>
+            <p>Lily choices will go here.</p>
+        </section>
+
+        <section class="step" data-step="2">
+            <h2>Add filler flowers</h2>
+            <p>Filler flower choices will go here (optional).</p>
+        </section>
+
+        <section class="step" data-step="3">
+            <h2>Choose wrapping</h2>
+            <p>Wrapping paper and ribbon colors will go here.</p>
+        </section>
+
+        <section class="step" data-step="4">
+            <h2>Finishing touches</h2>
+            <p>Bouquet name and card message will go here (optional).</p>
+        </section>
+
+        <section class="step" data-step="5">
+            <h2>Your bouquet!</h2>
+            <p>The finished bouquet drawing will appear here.</p>
+        </section>
+
+        <!-- Back / Next buttons -->
+        <nav class="nav-buttons">
+            <button id="back-btn" type="button">Back</button>
+            <button id="next-btn" type="button">Next</button>
+        </nav>
+    </main>
+
+    <script src="script.js"></script>
 </body>
 </html>

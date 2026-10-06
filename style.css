@@ -1,0 +1,91 @@
+/* Colors in one place so they're easy to change */
+:root {
+    --bg: #fff7f3;
+    --card: #ffffff;
+    --text: #5a4a4a;
+    --accent: #f4a6b8;
+    --accent-dark: #e2849b;
+    --soft: #f3e3e3;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Trebuchet MS", "Comic Sans MS", sans-serif;
+}
+
+/* One centered column, good for phones */
+.app {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+.app-header {
+    text-align: center;
+}
+
+.app-header h1 {
+    margin: 8px 0 4px;
+}
+
+.step-label {
+    margin: 0 0 16px;
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
+/* Each step is a rounded white card; hidden unless it's the current one */
+.step {
+    display: none;
+    background: var(--card);
+    border-radius: 24px;
+    padding: 20px;
+    min-height: 240px;
+    box-shadow: 0 4px 12px rgba(200, 150, 160, 0.2);
+}
+
+.step.active {
+    display: block;
+}
+
+/* Back / Next buttons side by side */
+.nav-buttons {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.nav-buttons button {
+    flex: 1;
+    padding: 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: white;
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.nav-buttons button:hover:not(:disabled) {
+    background: var(--accent-dark);
+}
+
+/* Greyed-out look for disabled buttons */
+.nav-buttons button:disabled {
+    background: var(--soft);
+    color: #b9a8a8;
+    cursor: not-allowed;
+}
+
+/* Used by script.js to hide a button (Next on the last step) */
+.hidden {
+    visibility: hidden;
+}
