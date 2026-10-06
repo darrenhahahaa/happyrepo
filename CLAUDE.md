@@ -21,6 +21,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
 - Fillers go between the lilies, in the gaps, and are drawn behind the lilies so they peek out and never cover a bloom. Each filler has its own job: baby's breath = small clusters poking just above the lilies, lavender = thin spikes between lilies, daisies = small, in the gaps, slightly lower, eucalyptus = mostly at the back and edges, framing the bouquet.
 - All stems (lilies and fillers) come together at one point, where the wrapping gathers them.
 - Every flower keeps its own spot. Adding one flower must not rearrange the others.
+- Slot system: lilies take their spots first. Every filler stem then gets its OWN free slot (no two fillers ever share one). Slots are spread over the whole bouquet dome with a golden-angle spiral, and handed out round-robin over the filler kinds (lavender, baby's breath, daisies, eucalyptus, lavender, ...) so each kind is spread out and the kinds mix evenly. Each stem gets a small tilt and size difference from a seeded (repeatable) random, so the bouquet never reshuffles on a click.
 - Max 18 lilies.
 
 ## Final reveal screen

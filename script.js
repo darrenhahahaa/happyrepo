@@ -17,20 +17,18 @@ const LILY_TYPES = [
 ];
 
 // The filler flowers you can add (all optional). Each has its own job in the bouquet:
-//   role "hole":  tucked into the gaps between lilies. holeOffset spreads the kinds over different gaps.
-//                 above = how far the tip pokes up past the highest lily next to the gap;
-//                 rise  = (instead of above) how far the tip sits past the gap itself.
+//   role "hole":  tucked into a gap between the lilies. rise = how far the tip sits above its gap.
 //   role "frame": around the edge of the lilies, mostly at the back.
 // scale is the drawing's size, top is where its highest point is (0-140), and the stem*
 // values match the drawing's own stem so the extra stem down to the gathering point blends in.
 const FILLER_TYPES = [
-    { key: "babys", label: "Baby's breath", draw: drawBabysBreath, role: "hole", holeOffset: 0, above: 12,
+    { key: "babys", label: "Baby's breath", draw: drawBabysBreath, role: "hole", rise: 50,
       scale: 0.5, top: 32, stemLine: "#4f7a5a", stemColor: "#86ad8b", stemWidth: 3 },
     { key: "eucalyptus", label: "Eucalyptus", draw: drawEucalyptus, role: "frame",
       scale: 0.85, top: 2, stemLine: "#6b4f3f", stemColor: "#a88b78", stemWidth: 3.4 },
-    { key: "daisies", label: "Small daisies", draw: drawDaisies, role: "hole", holeOffset: 1, rise: 17,
+    { key: "daisies", label: "Small daisies", draw: drawDaisies, role: "hole", rise: 12,
       scale: 0.5, top: 18, stemLine: LEAF_LINE, stemColor: LEAF_GREEN, stemWidth: 4 },
-    { key: "lavender", label: "Lavender", draw: drawLavender, role: "hole", holeOffset: 2, above: 40,
+    { key: "lavender", label: "Lavender", draw: drawLavender, role: "hole", rise: 62,
       scale: 0.7, top: 12, stemLine: "#46704a", stemColor: "#6f9a6a", stemWidth: 3 }
 ];
 
@@ -250,52 +248,88 @@ const LILY_SLOTS = (function () {
     });
 })();
 
-// A hole at (x, y). `top` is the height of the highest lily around it, so fillers
-// can poke up just past the blooms.
-function makeHole(x, y, around) {
-    let top = 0;
-    around.forEach(function (k) { top = Math.min(top, LILY_SLOTS[k].y - LILY_RADIUS); });
-    return { x: x, y: y, top: top };
+// ---------------------------------------------------------------
+// Filler slots
+// ---------------------------------------------------------------
+// Every filler stem gets its OWN slot, so no two fillers ever sit in the same spot.
+//  1. The lilies take their places first (LILY_SLOTS above).
+//  2. We find the open gaps left between the lilies, and a ring of spots just outside them.
+//  3. We spread slots evenly over the whole dome with a golden-angle spiral
+//     (each new point turns 137.5 degrees, which never lines up with an earlier one).
+//     Each spiral point claims the nearest gap that is still free.
+// Stems are handed out round-robin over the kinds (lavender, baby's breath, daisies, eucalyptus,
+// lavender, ...), so each kind is spread over the dome and the kinds are mixed evenly.
+// All of this is worked out once, so a flower's place never depends on what else is in the bouquet.
+
+const FILLER_ORDER = ["lavender", "babys", "daisies", "eucalyptus"];
+const FILLER_SLOT_COUNT = MAX_EACH_FILLER * FILLER_ORDER.length;
+
+// A repeatable "random" number between 0 and 1 for a given whole number.
+// The same number always gives the same answer, so the bouquet never reshuffles when you click.
+function pseudoRandom(n) {
+    const x = Math.sin(n * 12.9898 + 78.233) * 43758.5453;
+    return x - Math.floor(x);
 }
 
-// Find the open spots between the lilies that are there so far (n lilies).
-// A "hole" is the middle of three lilies that touch. Holes are listed in the order they appear.
-function findHoles(n) {
+const FILLER_SLOTS = (function () {
+    // the open gaps between lilies: the middle of three touching lilies, and between two
     const near = LILY_SPACING * 1.3;
     function close(a, b) {
         return Math.hypot(LILY_SLOTS[a].x - LILY_SLOTS[b].x, LILY_SLOTS[a].y - LILY_SLOTS[b].y) <= near;
     }
-    const holes = [];
-    for (let k = 2; k < n; k++) {
-        for (let j = 1; j < k; j++) {
+    const gaps = [];
+    const count = LILY_SLOTS.length;
+    for (let k = 1; k < count; k++) {
+        for (let j = 0; j < k; j++) {
+            if (!close(j, k)) continue;
+            gaps.push({ x: (LILY_SLOTS[j].x + LILY_SLOTS[k].x) / 2, y: (LILY_SLOTS[j].y + LILY_SLOTS[k].y) / 2 });
             for (let i = 0; i < j; i++) {
-                if (close(i, j) && close(j, k) && close(i, k)) {
-                    holes.push(makeHole(
-                        (LILY_SLOTS[i].x + LILY_SLOTS[j].x + LILY_SLOTS[k].x) / 3,
-                        (LILY_SLOTS[i].y + LILY_SLOTS[j].y + LILY_SLOTS[k].y) / 3,
-                        [i, j, k]
-                    ));
+                if (close(i, j) && close(i, k)) {
+                    gaps.push({
+                        x: (LILY_SLOTS[i].x + LILY_SLOTS[j].x + LILY_SLOTS[k].x) / 3,
+                        y: (LILY_SLOTS[i].y + LILY_SLOTS[j].y + LILY_SLOTS[k].y) / 3
+                    });
                 }
             }
         }
     }
-    if (holes.length > 0) return holes;
-    // fewer than 3 lilies: use the spot between two lilies, or the side of the only lily
-    if (n >= 2) {
-        return [makeHole((LILY_SLOTS[0].x + LILY_SLOTS[1].x) / 2, (LILY_SLOTS[0].y + LILY_SLOTS[1].y) / 2, [0, 1])];
+    // a ring of spots just outside the outermost lilies (the edge of the bouquet)
+    let outer = 0;
+    LILY_SLOTS.forEach(function (s) { outer = Math.max(outer, Math.hypot(s.x, s.y + DOME_HEIGHT)); });
+    for (let a = 0; a < 12; a++) {
+        const angle = a * Math.PI / 6;
+        gaps.push({ x: (outer + 16) * Math.sin(angle), y: -DOME_HEIGHT - (outer + 16) * Math.cos(angle) * 0.95 });
     }
-    return [makeHole(LILY_SLOTS[0].x + LILY_SPACING / 2, LILY_SLOTS[0].y, [0])];
-}
 
-// Where eucalyptus sprigs frame the bouquet: angles around the lily dome (0 = straight up)
-const FRAME_ANGLES = [-60, 60, -88, 88, -32, 32];
+    // spread the slots over the dome with a golden-angle spiral, and give each the nearest free gap
+    const reach = outer + 16;
+    const slots = [];
+    for (let p = 0; p < FILLER_SLOT_COUNT; p++) {
+        const radius = reach * Math.sqrt((p + 0.5) / FILLER_SLOT_COUNT);
+        const turn = p * 137.508;                                    // degrees
+        const wanted = {
+            x: radius * Math.cos(turn * Math.PI / 180),
+            y: -DOME_HEIGHT + 0.95 * radius * Math.sin(turn * Math.PI / 180)
+        };
+        let best = -1;
+        gaps.forEach(function (g, index) {
+            if (g.taken) return;
+            const d = Math.hypot(g.x - wanted.x, g.y - wanted.y);
+            if (best < 0 || d < Math.hypot(gaps[best].x - wanted.x, gaps[best].y - wanted.y)) best = index;
+        });
+        gaps[best].taken = true;
+        slots.push({ x: gaps[best].x, y: gaps[best].y, turn: ((turn % 360) + 360) % 360 });
+    }
+    return slots;
+})();
 
 // Draw one filler. Its tip goes to (tipX, tipY); the stem runs back to the gathering point.
 // Returns the picture, and adds the tip to `bounds` so we know how far to zoom out.
-function placeFiller(type, tipX, tipY, wiggle, bounds) {
+function placeFiller(type, tipX, tipY, wiggle, sizeMul, bounds) {
+    const scale = type.scale * sizeMul;
     const distance = Math.hypot(tipX, tipY);
     const turn = Math.atan2(tipX, -tipY) + wiggle * Math.PI / 180;    // angle from straight up
-    const length = (140 - type.top) * type.scale;                       // height of the drawing
+    const length = (140 - type.top) * scale;                            // height of the drawing
     const stemLength = Math.max(0, distance - length);                  // extra stem needed
     const bx = stemLength * Math.sin(turn);
     const by = -stemLength * Math.cos(turn);
@@ -305,11 +339,11 @@ function placeFiller(type, tipX, tipY, wiggle, bounds) {
     let s = '';
     if (stemLength > 0) {
         const path = 'M0 0 L' + bx.toFixed(1) + ' ' + by.toFixed(1);
-        s += '<path d="' + path + '" stroke="' + type.stemLine + '" stroke-width="' + (type.stemWidth * type.scale).toFixed(2) + '" stroke-linecap="round"/>';
-        s += '<path d="' + path + '" stroke="' + type.stemColor + '" stroke-width="' + (type.stemWidth * type.scale * 0.5).toFixed(2) + '" stroke-linecap="round"/>';
+        s += '<path d="' + path + '" stroke="' + type.stemLine + '" stroke-width="' + (type.stemWidth * scale).toFixed(2) + '" stroke-linecap="round"/>';
+        s += '<path d="' + path + '" stroke="' + type.stemColor + '" stroke-width="' + (type.stemWidth * scale * 0.5).toFixed(2) + '" stroke-linecap="round"/>';
     }
     // the drawing is 100 x 140 with its stem at the bottom middle
-    s += '<g transform="translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') rotate(' + (turn * 180 / Math.PI).toFixed(1) + ') scale(' + type.scale + ') translate(-50 -140)">' + type.draw() + '</g>';
+    s += '<g transform="translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') rotate(' + (turn * 180 / Math.PI).toFixed(1) + ') scale(' + scale.toFixed(3) + ') translate(-50 -140)">' + type.draw() + '</g>';
     return s;
 }
 
@@ -332,41 +366,41 @@ function drawBouquet(lilyTypes, fillerCounts) {
     };
     heads.forEach(function (h) { bounds.add(h.x, h.y, LILY_RADIUS); });
 
-    // ----- fillers -----
-    const holes = findHoles(n);
+    // ----- fillers: each stem uses its own slot -----
     let domeRadius = 0;
     heads.forEach(function (h) {
         domeRadius = Math.max(domeRadius, Math.hypot(h.x, h.y + DOME_HEIGHT) + LILY_RADIUS);
     });
 
-    let frame = '';       // eucalyptus (furthest back)
-    let tucked = '';      // baby's breath, daisies, lavender (between the lilies)
+    const behind = [];     // eucalyptus (furthest back)
+    const between = [];    // lavender, baby's breath, daisies (between the lilies)
     FILLER_TYPES.forEach(function (type) {
+        const kind = FILLER_ORDER.indexOf(type.key);
         for (let j = 0; j < fillerCounts[type.key]; j++) {
+            // round-robin: the 1st of each kind, then the 2nd of each kind, and so on
+            const number = j * FILLER_ORDER.length + kind;
+            const slot = FILLER_SLOTS[number];
+            // a small tilt and size difference for each stem (the same every time)
+            const wiggle = (pseudoRandom(number + 1) - 0.5) * 8;
+            const sizeMul = 0.9 + pseudoRandom(number + 101) * 0.2;
+
             if (type.role === "frame") {
-                // eucalyptus: around the edge of the lily dome, mostly at the back
-                const angle = FRAME_ANGLES[j % FRAME_ANGLES.length] * Math.PI / 180;
+                // eucalyptus: around the edge of the lilies. The slot picks the direction,
+                // spread from -100 to +100 degrees around straight up (the back and the sides).
+                const angle = ((slot.turn / 360 - 0.5) * 200) * Math.PI / 180;
                 const out = domeRadius + 22;
-                frame += placeFiller(type, out * Math.sin(angle), -DOME_HEIGHT - out * Math.cos(angle), 0, bounds);
+                behind.push({ y: 0, svg: placeFiller(type, out * Math.sin(angle), -DOME_HEIGHT - out * Math.cos(angle), wiggle, sizeMul, bounds) });
             } else {
-                // the others: in a hole between lilies. Each kind uses every 3rd hole, so they spread out.
-                const hole = holes[(j * 3 + type.holeOffset) % holes.length];
-                let tipX;
-                let tipY;
-                if (type.above !== undefined) {
-                    // tip pokes up `above` units past the highest lily next to the hole
-                    tipY = hole.top - type.above;
-                    tipX = hole.x * tipY / hole.y;
-                } else {
-                    // tip sits just beyond the hole itself (so the flowers show in the gap)
-                    const length = Math.hypot(hole.x, hole.y);
-                    tipX = hole.x + hole.x / length * type.rise;
-                    tipY = hole.y + hole.y / length * type.rise;
-                }
-                tucked += placeFiller(type, tipX, tipY, (type.holeOffset - 1) * 2 + j, bounds);
+                // the others: the tip sits a little above the slot's gap between lilies
+                const tipY = slot.y - type.rise * sizeMul;
+                between.push({ y: tipY, svg: placeFiller(type, slot.x, tipY, wiggle, sizeMul, bounds) });
             }
         }
     });
+    // higher ones first, so lower ones overlap them
+    between.sort(function (a, b) { return a.y - b.y; });
+    const frame = behind.map(function (f) { return f.svg; }).join('');
+    const tucked = between.map(function (f) { return f.svg; }).join('');
 
     // ----- lily stems and heads (drawn last, so they sit in front of the fillers) -----
     let stems = '';
