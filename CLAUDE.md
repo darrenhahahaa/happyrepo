@@ -14,6 +14,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
 - Every step has Back and Next buttons. Going back never loses choices.
 - Show which step you're on (e.g. "Step 2 of 5").
 - A small live preview while building is nice to have. The reveal is the big moment.
+- **Arrange it yourself**: a button under the preview. The bouquet starts with the template layout. Switch it on and any flower can be dragged (mouse or touch). The flower you pick up moves to the front. Flowers stay inside the bouquet area (a dotted outline is shown while arranging), never off the wrap. **Reset arrangement** snaps everything back to the template. Custom positions are kept when going Back/Next and are part of the data saved to My bouquets (`getBouquetData` / `loadBouquetData` in `script.js`). Adding or removing a flower keeps all the others where they are: a new flower takes a free spot, a removed one is the last one added of that kind.
 
 ## Rules
 - A bouquet must always have at least 1 lily. Next is disabled on step 1 until there is one.
@@ -25,7 +26,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
   - baby's breath: small puffs tucked into the gaps on the edge, just peeking out
   - daisies: a neat row along the front lower edge
 - All stems (lilies and fillers) are tied into one tight bundle at the bottom, where the wrapping gathers them. Stems curve neatly into it and are trimmed flat. No long messy stems.
-- Layouts are hand-made, not automatic. `bouquet.js` has a fixed table with one arrangement for every number of lilies (1 to 18, `LILY_LAYOUTS`) and one for every number of each filler (1 to 6, `FILLER_LAYOUTS`). To change how a bouquet looks, edit the numbers in those tables. Adding a flower switches to the next layout, so the flowers can move a little.
+- Layouts are hand-made, not automatic. `bouquet.js` has a fixed table with one arrangement for every number of lilies (1 to 18, `LILY_LAYOUTS`) and one for every number of each filler (1 to 6, `FILLER_LAYOUTS`). To change how a bouquet looks, edit the numbers in those tables. Adding a flower switches to the next template layout, so the flowers can move a little (but not once the bouquet has been arranged by hand).
 - Lily colors are spread out evenly (same colors as far apart as possible, not clumped), worked out the same way every time.
 - No randomness anywhere in the layout: the same choices always give exactly the same bouquet.
 - The whole bouquet scales down a little as flowers are added so it always fits.
@@ -52,7 +53,7 @@ A website where people build a custom lily bouquet step by step, then see it as 
   - `builder.html`: the step-by-step bouquet builder, styled to match the main page. Uses `style.css`, `flowers.js`, `bouquet.js` and `script.js`.
   - `style.css`, `script.js`: the builder's styles (the main page look, see Look and feel) and logic. `gallery.html` uses `style.css` too.
   - `flowers.js`: all SVG drawings for the builder: lilies, fillers, wrapping, ribbon.
-  - `bouquet.js`: the hand-made bouquet layouts and the code that draws a whole bouquet (`drawBouquet`). No page code, so the builder and the gallery both use it. Also holds the lily and filler lists and the limits.
+  - `bouquet.js`: the hand-made bouquet layouts, the code that draws a whole bouquet (`drawBouquet`), and the code for arranging by hand (`startArrangement`, `arrangementAdd`, `arrangementRemove`, `clampToArea`). No page code, so the builder and the gallery both use it. Also holds the lily and filler lists and the limits.
   - `gallery.html`: test page that shows every drawing and the bouquet layouts (1, 3, 6, 9, 12 and 18 lilies, with and without fillers, and the filler layouts 1 to 6).
 - Hosted on GitHub Pages from the `main` branch root, so all file paths must be relative.
 - Saving uses `localStorage` (key: `happy-lilies-bouquets`), wrapped in try/catch.

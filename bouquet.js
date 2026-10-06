@@ -260,6 +260,12 @@ function spreadColors(spots, counts) {
 // ---------------------------------------------------------------
 // Drawing the bouquet
 // ---------------------------------------------------------------
+// A bouquet is a list of "items", one per flower. Each item is a plain object that can be saved:
+//   { id, kind: "lily" or "filler", type: the color or filler key, x, y, scale, spin, z }
+// For a lily, (x, y) is the middle of the flower. For a filler, it is the tip.
+// z is the drawing order: higher z is drawn later, so it is in front.
+// The "template" is the hand-made layout. "Arrange it yourself" starts from a copy of the template
+// and then the items are moved by hand.
 
 const LILY_REACH = 34;      // how far a lily's petals reach (the front ones are bigger)
 
@@ -284,127 +290,277 @@ function onDome(dome, angle, extra) {
     return { x: (dome.rx + extra) * Math.sin(a), y: dome.cy - (height + extra) * Math.cos(a) };
 }
 
-// Draw one filler with its tip at (tipX, tipY). Its stem curves down into the tied bundle at (bundleX, 0).
-// Returns the picture, and adds the tip to `bounds` so we know how far to zoom out.
-function placeFiller(type, tipX, tipY, bundleX, bounds) {
+// Where a filler's tip goes for one place in its layout
+function fillerTip(type, place, dome) {
+    if (type.role === "frame") return onDome(dome, place, 26);
+    if (type.role === "spikes") return onDome(dome, place, 38 + (1 - Math.abs(place) / 90) * 14);   // the middle ones are tallest
+    if (type.role === "puffs") return onDome(dome, place, 2);
+    return { x: place, y: dome.cy + dome.down + 8 + Math.abs(place) * 0.08 };                       // daisies: a row along the front
+}
+
+function lilyTypeFor(key) {
+    return LILY_TYPES.filter(function (type) { return type.key === key; })[0];
+}
+function fillerTypeFor(key) {
+    return FILLER_TYPES.filter(function (type) { return type.key === key; })[0];
+}
+
+// Drawing order of the template: eucalyptus at the very back, then lavender, then baby's breath,
+// then the lilies (back to front), and the row of daisies in front.
+const FILLER_Z_START = { frame: 0, spikes: 10, puffs: 20, row: 500 };
+
+// The hand-made layout as a list of items, for these counts. Returns { items, centerY }.
+function templateItems(lilyCounts, fillerCounts) {
+    let n = 0;
+    LILY_TYPES.forEach(function (type) { n += lilyCounts[type.key]; });
+    if (n === 0) return { items: [], centerY: 0 };
+
+    const layout = LILY_LAYOUTS[n];
+    const colors = spreadColors(layout.lilies, lilyCounts);
+    const items = [];
+
+    // lilies: back ones are drawn first, so give them the lower z
+    const byHeight = layout.lilies.map(function (spot, k) { return k; }).sort(function (a, b) {
+        return layout.lilies[a][1] - layout.lilies[b][1];
+    });
+    layout.lilies.forEach(function (spot, k) {
+        items.push({ id: "lily-" + k, kind: "lily", type: colors[k].key, x: spot[0], y: spot[1], scale: spot[2], spin: spot[3], z: 100 + byHeight.indexOf(k) });
+    });
+
+    // fillers: around the dome of lilies
+    const dome = domeSize(items, layout.centerY);
+    FILLER_TYPES.forEach(function (type) {
+        const count = fillerCounts[type.key];
+        if (count === 0) return;
+        FILLER_LAYOUTS[type.key][count].forEach(function (place, j) {
+            const tip = fillerTip(type, place, dome);
+            items.push({ id: type.key + "-" + j, kind: "filler", type: type.key, x: tip.x, y: tip.y, scale: 1, spin: 0, z: FILLER_Z_START[type.role] + j });
+        });
+    });
+    return { items: items, centerY: layout.centerY };
+}
+
+// How far to zoom so every item fits on the 300 x 300 canvas (the tied stems are at the bottom middle)
+function fitZoom(items) {
+    let up = 0;
+    let side = 0;
+    items.forEach(function (it) {
+        const r = it.kind === "lily" ? LILY_REACH + 2 : 16;
+        up = Math.max(up, -it.y + r);
+        side = Math.max(side, Math.abs(it.x) + r);
+    });
+    return Math.min(1.5, 270 / up, 140 / side);
+}
+
+// ---------------------------------------------------------------
+// Arranging by hand
+// ---------------------------------------------------------------
+// An "arrangement" is { zoom, nextId, items }: a copy of the items that can be moved around.
+// It is plain data (numbers and text), so it can be kept with a saved bouquet.
+// The zoom is locked while arranging, so the picture doesn't rescale while you drag.
+
+// Start arranging: copy the template layout for these counts
+function startArrangement(lilyCounts, fillerCounts) {
+    const template = templateItems(lilyCounts, fillerCounts);
+    return { zoom: Math.min(fitZoom(template.items), 0.8), nextId: 1, items: template.items };
+}
+
+// The part of the canvas where flowers may be placed: an oval-ish bouquet area inside the picture.
+function arrangeArea(zoom) {
+    const maxX = 140 / zoom;
+    const minY = -270 / zoom + 14;
+    const maxY = -40;
+    return { maxX: maxX, minY: minY, maxY: maxY, cx: 0, cy: (minY + maxY) / 2, rx: maxX * 1.25, ry: (maxY - minY) / 2 * 1.25 };
+}
+
+// Keep a point inside the bouquet area (so a flower can't be dragged off the wrap)
+function clampToArea(x, y, zoom) {
+    const area = arrangeArea(zoom);
+    x = Math.max(-area.maxX, Math.min(area.maxX, x));
+    y = Math.max(area.minY, Math.min(area.maxY, y));
+    const dx = (x - area.cx) / area.rx;
+    const dy = (y - area.cy) / area.ry;
+    const out = Math.hypot(dx, dy);
+    if (out > 1) {
+        x = area.cx + dx / out * area.rx;
+        y = area.cy + dy / out * area.ry;
+    }
+    return { x: x, y: y };
+}
+
+function highestZ(arrangement) {
+    let z = 0;
+    arrangement.items.forEach(function (it) { z = Math.max(z, it.z); });
+    return z;
+}
+
+// A flower was added (the counts already include it): put it in the best free place and leave the others alone.
+function arrangementAdd(arrangement, group, key, lilyCounts, fillerCounts) {
+    const items = arrangement.items;
+    const id = "new-" + arrangement.nextId;
+    const z = highestZ(arrangement) + 1;
+    arrangement.nextId++;
+    const lilies = items.filter(function (it) { return it.kind === "lily"; });
+
+    if (group === "lilies") {
+        // try a grid of spots; pick the one furthest from the other lilies, but still close to the bunch
+        let cx = 0;
+        let cy = -200;
+        if (lilies.length > 0) {
+            cx = lilies.reduce(function (s, it) { return s + it.x; }, 0) / lilies.length;
+            cy = lilies.reduce(function (s, it) { return s + it.y; }, 0) / lilies.length;
+        }
+        let best = null;
+        let bestScore = -1e9;
+        const area = arrangeArea(arrangement.zoom);
+        for (let y = area.minY; y <= -90; y += 10) {
+            for (let x = -area.maxX; x <= area.maxX; x += 10) {
+                const spot = clampToArea(x, y, arrangement.zoom);
+                if (Math.abs(spot.x - x) > 1 || Math.abs(spot.y - y) > 1) continue;
+                let gap = 60;
+                lilies.forEach(function (it) { gap = Math.min(gap, Math.hypot(it.x - x, it.y - y)); });
+                const score = gap - 0.1 * Math.hypot(x - cx, y - cy);
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = { x: x, y: y };
+                }
+            }
+        }
+        // take the size of the nearest lily, so front and back keep their look
+        let near = lilies[0];
+        lilies.forEach(function (it) {
+            if (Math.hypot(it.x - best.x, it.y - best.y) < Math.hypot(near.x - best.x, near.y - best.y)) near = it;
+        });
+        items.push({ id: id, kind: "lily", type: key, x: best.x, y: best.y, scale: near ? near.scale : LILY_SCALE_DEFAULT, spin: ((arrangement.nextId * 23) % 60) - 30, z: z });
+        return;
+    }
+
+    // a filler: use the spots of the hand-made layout for the new count, and take the one
+    // furthest from the fillers of the same kind that are already there
+    const type = fillerTypeFor(key);
+    const count = fillerCounts[key];
+    let cy = -200;
+    if (lilies.length > 0) cy = lilies.reduce(function (s, it) { return s + it.y; }, 0) / lilies.length;
+    const dome = domeSize(lilies, cy);
+    const same = items.filter(function (it) { return it.kind === "filler" && it.type === key; });
+    let best = null;
+    let bestGap = -1;
+    FILLER_LAYOUTS[key][count].forEach(function (place) {
+        const tip = fillerTip(type, place, dome);
+        let gap = 1e6;
+        same.forEach(function (it) { gap = Math.min(gap, Math.hypot(it.x - tip.x, it.y - tip.y)); });
+        if (gap > bestGap) {
+            bestGap = gap;
+            best = tip;
+        }
+    });
+    const spot = clampToArea(best.x, best.y, arrangement.zoom);
+    items.push({ id: id, kind: "filler", type: key, x: spot.x, y: spot.y, scale: 1, spin: 0, z: z });
+}
+
+const LILY_SCALE_DEFAULT = 0.62;
+
+// A flower was removed: take away the one of that kind added last. Everyone else stays put.
+function arrangementRemove(arrangement, group, key) {
+    const kind = group === "lilies" ? "lily" : "filler";
+    for (let i = arrangement.items.length - 1; i >= 0; i--) {
+        if (arrangement.items[i].kind === kind && arrangement.items[i].type === key) {
+            arrangement.items.splice(i, 1);
+            return;
+        }
+    }
+}
+
+// ---------------------------------------------------------------
+// Drawing the items
+// ---------------------------------------------------------------
+
+// A stem from (x, y) down into the tied bundle at (bundleX, 0). Two paths: an outline and a lighter middle.
+// The data-* values let the builder bend the stem while a flower is being dragged.
+function stemPaths(x, y, bundleX, outline, outlineWidth, color, colorWidth) {
+    const path = 'M' + x.toFixed(1) + ' ' + y.toFixed(1) + ' Q' + (x + (bundleX - x) * 0.15).toFixed(1) + ' ' + (y * 0.4).toFixed(1) + ' ' + bundleX.toFixed(1) + ' 0';
+    const data = ' class="stem-path" data-sx="' + x.toFixed(1) + '" data-sy="' + y.toFixed(1) + '" data-bundle="' + bundleX.toFixed(1) + '" fill="none" stroke-linecap="round"';
+    return '<path d="' + path + '"' + data + ' stroke="' + outline + '" stroke-width="' + outlineWidth.toFixed(2) + '"/>' +
+        '<path d="' + path + '"' + data + ' stroke="' + color + '" stroke-width="' + colorWidth.toFixed(2) + '"/>';
+}
+
+// An invisible circle that makes a flower easy to grab with a finger
+function hitCircle(x, y, r) {
+    return '<circle class="hit" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="rgba(0,0,0,0.001)"/>';
+}
+
+function drawLilyItem(item, bundleX) {
+    const type = lilyTypeFor(item.type);
+    return '<g class="item" data-id="' + item.id + '">' +
+        stemPaths(item.x, item.y, bundleX, LEAF_LINE, 4.4, LEAF_GREEN, 2.4) +
+        '<g class="body">' +
+        '<g transform="translate(' + item.x.toFixed(1) + ' ' + item.y.toFixed(1) + ') rotate(' + item.spin + ') scale(' + item.scale.toFixed(3) + ') translate(-50 -52)">' +
+        type.draw({ headOnly: true }) + '</g>' +
+        hitCircle(item.x, item.y, 47 * item.scale * 0.9) +
+        '</g></g>';
+}
+
+// A filler: the drawing with its tip at (item.x, item.y), and its stem curving down into the bundle
+function drawFillerItem(item, bundleX) {
+    const type = fillerTypeFor(item.type);
     const length = (140 - type.top) * type.scale;                      // height of the drawing
-    const lean = Math.atan2(tipX, 230);                                // leans a little outward
+    const lean = Math.atan2(item.x, 230);                              // leans a little outward
     const ax = Math.sin(lean);
     const ay = -Math.cos(lean);                                        // the direction it points
-    const bx = tipX - ax * length;                                     // where the drawing's own stem starts
-    const by = tipY - ay * length;
+    const bx = item.x - ax * length;                                   // where the drawing's own stem starts
+    const by = item.y - ay * length;
 
-    bounds.add(tipX, tipY, 16);
-
-    let s = '';
-    if (by < -4) {
-        // a smooth stem from the drawing down into the bundle
-        const path = 'M' + bx.toFixed(1) + ' ' + by.toFixed(1) + ' Q' + (bx + (bundleX - bx) * 0.15).toFixed(1) + ' ' + (by * 0.4).toFixed(1) + ' ' + bundleX.toFixed(1) + ' 0';
-        s += '<path d="' + path + '" fill="none" stroke="' + type.stemLine + '" stroke-width="' + (type.stemWidth * type.scale).toFixed(2) + '" stroke-linecap="round"/>';
-        s += '<path d="' + path + '" fill="none" stroke="' + type.stemColor + '" stroke-width="' + (type.stemWidth * type.scale * 0.5).toFixed(2) + '" stroke-linecap="round"/>';
-    }
+    let s = '<g class="item" data-id="' + item.id + '">';
+    if (by < -4) s += stemPaths(bx, by, bundleX, type.stemLine, type.stemWidth * type.scale, type.stemColor, type.stemWidth * type.scale * 0.5);
     // the drawing is 100 x 140 with its stem at the bottom middle
-    s += '<g transform="translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') rotate(' + (lean * 180 / Math.PI).toFixed(1) + ') scale(' + type.scale + ') translate(-50 -140)">' + type.draw() + '</g>';
-    return s;
+    s += '<g class="body"><g transform="translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') rotate(' + (lean * 180 / Math.PI).toFixed(1) + ') scale(' + type.scale + ') translate(-50 -140)">' + type.draw() + '</g>';
+    s += hitCircle(item.x - ax * length * 0.3, item.y - ay * length * 0.3, Math.max(16, length * 0.22));
+    return s + '</g></g>';
+}
+
+// Draw a list of items (picture pieces, no <svg> tag) on a 300 x 300 canvas.
+// zoom: how much to scale it. showArea: draw a dotted line around the area flowers can be moved in.
+function drawItems(items, zoom, showArea) {
+    // tie all stems into one bundle, in left-to-right order so they don't cross
+    const bundleX = {};
+    const bundleWidth = Math.min(26, 8 + items.length * 1.2);
+    items.slice().sort(function (a, b) { return a.x - b.x; }).forEach(function (it, i) {
+        bundleX[it.id] = items.length > 1 ? (i / (items.length - 1) - 0.5) * bundleWidth : 0;
+    });
+
+    // draw from the back (low z) to the front (high z)
+    let pictures = '';
+    items.slice().sort(function (a, b) { return a.z - b.z; }).forEach(function (it) {
+        pictures += it.kind === "lily" ? drawLilyItem(it, bundleX[it.id]) : drawFillerItem(it, bundleX[it.id]);
+    });
+
+    let area = '';
+    if (showArea) {
+        // the edge of the area flowers can be moved in, as a dotted line
+        const a = arrangeArea(zoom);
+        const points = [];
+        for (let i = 0; i < 90; i++) {
+            const angle = i / 90 * 2 * Math.PI;
+            const edge = clampToArea(a.cx + a.rx * Math.cos(angle), a.cy + a.ry * Math.sin(angle), zoom);
+            points.push(edge.x.toFixed(1) + ' ' + edge.y.toFixed(1));
+        }
+        area = '<path d="M' + points.join(' L') + ' Z" fill="none" stroke="#F8F1C4" stroke-width="1.5" stroke-dasharray="6 6" opacity="0.5"/>';
+    }
+
+    // Everything below the tie is trimmed flat, like a florist's cut stems.
+    return '<defs><clipPath id="bouquet-trim"><rect x="-600" y="-900" width="1200" height="900"/></clipPath></defs>' +
+        '<g class="bouquet-zoom" transform="translate(150 285) scale(' + zoom.toFixed(3) + ')">' + area +
+        '<g class="bouquet-items" clip-path="url(#bouquet-trim)">' + pictures + '</g></g>';
 }
 
 // Draw the whole bouquet (picture pieces, no <svg> tag) on a 300 x 300 canvas.
 // lilyCounts: how many of each lily color, e.g. { white: 2, orange: 1, ... }
 // fillerCounts: how many of each filler, e.g. { babys: 1, lavender: 2, ... }
-// Also used for the big reveal later.
-function drawBouquet(lilyCounts, fillerCounts) {
-    let n = 0;
-    LILY_TYPES.forEach(function (type) { n += lilyCounts[type.key]; });
-    if (n === 0) return '';
-
-    // the hand-made layout for this many lilies, and a color for every place in it
-    const layout = LILY_LAYOUTS[n];
-    const colors = spreadColors(layout.lilies, lilyCounts);
-    const heads = layout.lilies.map(function (spot, k) {
-        return { type: colors[k], x: spot[0], y: spot[1], scale: spot[2], spin: spot[3] };
-    });
-    const dome = domeSize(heads, layout.centerY);
-
-    // track how far the bouquet reaches so we can zoom it to fit
-    const bounds = {
-        up: 0,
-        side: 0,
-        add: function (x, y, r) {
-            this.up = Math.max(this.up, -y + r);
-            this.side = Math.max(this.side, Math.abs(x) + r);
-        }
-    };
-
-    // every stem in the bouquet, so we can tie them into one neat bundle
-    const stems = [];
-    heads.forEach(function (head) {
-        bounds.add(head.x, head.y, LILY_REACH + 2);
-        stems.push({ x: head.x, head: head });
-    });
-
-    // ----- fillers: work out where each tip goes -----
-    const layers = { frame: [], spikes: [], puffs: [], row: [] };
-    FILLER_TYPES.forEach(function (type) {
-        const count = fillerCounts[type.key];
-        if (count === 0) return;
-        FILLER_LAYOUTS[type.key][count].forEach(function (place) {
-            let tip;
-            if (type.role === "frame") {
-                tip = onDome(dome, place, 26);
-            } else if (type.role === "spikes") {
-                tip = onDome(dome, place, 38 + (1 - Math.abs(place) / 90) * 14);   // the middle ones are tallest
-            } else if (type.role === "puffs") {
-                tip = onDome(dome, place, 2);
-            } else {
-                tip = { x: place, y: dome.cy + dome.down + 8 + Math.abs(place) * 0.08 };
-            }
-            const filler = { type: type, x: tip.x, y: tip.y };
-            layers[type.role].push(filler);
-            stems.push({ x: filler.x, filler: filler });
-        });
-    });
-
-    // ----- tie all stems into one bundle, in left-to-right order so they don't cross -----
-    stems.sort(function (a, b) { return a.x - b.x; });
-    const bundleWidth = Math.min(26, 8 + stems.length * 1.2);
-    stems.forEach(function (stem, i) {
-        stem.bundleX = stems.length > 1 ? (i / (stems.length - 1) - 0.5) * bundleWidth : 0;
-    });
-    function bundleOf(key, thing) {
-        return stems.filter(function (s) { return s[key] === thing; })[0].bundleX;
-    }
-
-    // ----- draw, from the back to the front -----
-    let behind = '';
-    ['frame', 'spikes', 'puffs'].forEach(function (role) {
-        layers[role].forEach(function (f) {
-            behind += placeFiller(f.type, f.x, f.y, bundleOf('filler', f), bounds);
-        });
-    });
-
-    let lilyStems = '';
-    heads.forEach(function (h) {
-        const bundleX = bundleOf('head', h);
-        const path = 'M' + h.x.toFixed(1) + ' ' + h.y.toFixed(1) + ' Q' + (h.x + (bundleX - h.x) * 0.15).toFixed(1) + ' ' + (h.y * 0.4).toFixed(1) + ' ' + bundleX.toFixed(1) + ' 0';
-        lilyStems += '<path d="' + path + '" fill="none" stroke="' + LEAF_LINE + '" stroke-width="4.4" stroke-linecap="round"/>';
-        lilyStems += '<path d="' + path + '" fill="none" stroke="' + LEAF_GREEN + '" stroke-width="2.4" stroke-linecap="round"/>';
-    });
-
-    let row = '';
-    layers.row.forEach(function (f) {
-        row += placeFiller(f.type, f.x, f.y, bundleOf('filler', f), bounds);
-    });
-
-    let flowers = '';
-    heads.slice().sort(function (a, b) { return a.y - b.y; }).forEach(function (h) {
-        flowers += '<g transform="translate(' + h.x.toFixed(1) + ' ' + h.y.toFixed(1) + ') rotate(' + h.spin + ') scale(' + h.scale.toFixed(3) + ') translate(-50 -52)">' +
-            h.type.draw({ headOnly: true }) + '</g>';
-    });
-
-    // zoom the whole bouquet to fit the canvas (the tied stems sit at the bottom middle).
-    // Everything below the tie is trimmed flat, like a florist's cut stems.
-    const zoom = Math.min(1.5, 270 / bounds.up, 140 / bounds.side);
-    return '<defs><clipPath id="bouquet-trim"><rect x="-600" y="-900" width="1200" height="900"/></clipPath></defs>' +
-        '<g transform="translate(150 285) scale(' + zoom.toFixed(3) + ')"><g clip-path="url(#bouquet-trim)">' +
-        behind + lilyStems + row + flowers + '</g></g>';
+// arrangement (optional): flowers moved by hand. If it is given, it is drawn instead of the template.
+// showArea (optional): draw the dotted line around the area flowers can be moved in.
+function drawBouquet(lilyCounts, fillerCounts, arrangement, showArea) {
+    if (arrangement) return drawItems(arrangement.items, arrangement.zoom, showArea);
+    const template = templateItems(lilyCounts, fillerCounts);
+    if (template.items.length === 0) return '';
+    return drawItems(template.items, fitZoom(template.items), false);
 }

@@ -9,7 +9,12 @@ let currentStep = 1;
 // All the bouquet choices live here, so Back never loses them.
 // lilies:  how many of each lily color, e.g. { white: 2, orange: 1, ... }
 // fillers: how many of each filler,     e.g. { babys: 1, lavender: 2, ... }
-const state = { lilies: {}, fillers: {} };
+// arrangement: null while the bouquet uses the hand-made template layout. Once someone starts
+//              "Arrange it yourself" it holds the position of every flower (see bouquet.js).
+const state = { lilies: {}, fillers: {}, arrangement: null };
+
+// Is "Arrange it yourself" switched on right now? (Only for the current visit to a step.)
+let arranging = false;
 LILY_TYPES.forEach(function (type) { state.lilies[type.key] = 0; });
 FILLER_TYPES.forEach(function (type) { state.fillers[type.key] = 0; });
 
@@ -23,6 +28,10 @@ const lilyList = document.getElementById("lily-list");
 const lilyTotalText = document.getElementById("lily-total");
 const lilyMessage = document.getElementById("lily-message");
 const fillerList = document.getElementById("filler-list");
+const arrangeBar = document.getElementById("arrange-bar");
+const arrangeBtn = document.getElementById("arrange-btn");
+const resetBtn = document.getElementById("reset-btn");
+const arrangeHint = document.getElementById("arrange-hint");
 
 // ---------------------------------------------------------------
 // Step navigation
@@ -56,6 +65,10 @@ function showStep(n) {
 
     // The big reveal on the last step replaces the small preview
     previewBox.classList.toggle("collapsed", n === TOTAL_STEPS);
+
+    // moving to another step switches arranging off (the arrangement itself is kept)
+    arranging = false;
+    renderPreview();
 
     updateNav();
 }
@@ -100,6 +113,19 @@ function canAdd(group, key) {
 // Change one count by +1 or -1
 function changeCount(group, key, change) {
     state[group][key] += change;
+
+    // If flowers have been arranged by hand, everyone else stays where they are:
+    // a new flower gets a free spot, and a removed flower is the only one that goes.
+    if (state.arrangement) {
+        if (totalLilies() === 0) {
+            state.arrangement = null;      // no lilies left, so nothing to arrange
+            arranging = false;
+        } else if (change > 0) {
+            arrangementAdd(state.arrangement, group, key, state.lilies, state.fillers);
+        } else {
+            arrangementRemove(state.arrangement, group, key);
+        }
+    }
 }
 
 // One listener handles every - and + button in both pickers
@@ -154,11 +180,132 @@ function updatePickers() {
 
 // Show the bouquet so far in the preview box (drawBouquet is in bouquet.js)
 function renderPreview() {
+    updateArrangeBar();
     if (totalLilies() === 0) {
         previewBox.innerHTML = '<p class="preview-empty">Add a lily to see your bouquet!</p>';
         return;
     }
-    previewBox.innerHTML = makeSvg(drawBouquet(state.lilies, state.fillers), "0 0 300 300");
+    previewBox.innerHTML = makeSvg(drawBouquet(state.lilies, state.fillers, state.arrangement, arranging), "0 0 300 300");
+}
+
+// ---------------------------------------------------------------
+// Arrange it yourself
+// ---------------------------------------------------------------
+
+// Show or hide the arrange buttons and the hint, and tell the preview whether it is being arranged
+function updateArrangeBar() {
+    const canArrange = totalLilies() > 0 && currentStep !== TOTAL_STEPS;
+    arrangeBar.hidden = !canArrange;
+    arrangeBtn.textContent = arranging ? "Done arranging" : "Arrange it yourself";
+    resetBtn.hidden = !state.arrangement;
+    arrangeHint.hidden = !(canArrange && arranging);
+    previewBox.classList.toggle("arranging", arranging);
+}
+
+// The button switches arranging on and off. Switching it on copies the template layout,
+// and from then on every flower can be moved.
+arrangeBtn.addEventListener("click", function () {
+    if (!arranging && !state.arrangement) {
+        state.arrangement = startArrangement(state.lilies, state.fillers);
+    }
+    arranging = !arranging;
+    renderPreview();
+});
+
+// "Reset arrangement": everything snaps back to the template layout
+resetBtn.addEventListener("click", function () {
+    state.arrangement = arranging ? startArrangement(state.lilies, state.fillers) : null;
+    renderPreview();
+});
+
+// Turn a pointer position (mouse or finger) into a position in the bouquet drawing
+function pointInBouquet(event, zoomGroup) {
+    const point = zoomGroup.ownerSVGElement.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(zoomGroup.getScreenCTM().inverse());
+}
+
+// The flower being dragged right now (null when nothing is picked up)
+let drag = null;
+
+previewBox.addEventListener("pointerdown", function (event) {
+    if (!arranging || !state.arrangement || drag) return;
+    const picture = event.target.closest(".item");
+    if (!picture) return;
+    const item = state.arrangement.items.filter(function (it) { return it.id === picture.dataset.id; })[0];
+    if (!item) return;
+
+    const zoomGroup = previewBox.querySelector(".bouquet-zoom");
+    const start = pointInBouquet(event, zoomGroup);
+    drag = {
+        pointerId: event.pointerId,
+        item: item,
+        zoomGroup: zoomGroup,
+        grabX: item.x - start.x,          // so the flower doesn't jump to the finger
+        grabY: item.y - start.y,
+        body: picture.querySelector(".body"),
+        stems: picture.querySelectorAll(".stem-path"),
+        moveX: item.x,
+        moveY: item.y
+    };
+
+    // the flower you pick up goes to the front
+    item.z = highestZ(state.arrangement) + 1;
+    picture.parentNode.appendChild(picture);
+
+    previewBox.setPointerCapture(event.pointerId);
+    event.preventDefault();
+});
+
+previewBox.addEventListener("pointermove", function (event) {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const p = pointInBouquet(event, drag.zoomGroup);
+    // stay inside the bouquet area
+    const spot = clampToArea(p.x + drag.grabX, p.y + drag.grabY, state.arrangement.zoom);
+    drag.moveX = spot.x;
+    drag.moveY = spot.y;
+    const dx = spot.x - drag.item.x;
+    const dy = spot.y - drag.item.y;
+
+    // move the flower, and bend its stem so it stays joined to the bundle
+    drag.body.setAttribute("transform", "translate(" + dx.toFixed(1) + " " + dy.toFixed(1) + ")");
+    drag.stems.forEach(function (path) {
+        const x = Number(path.dataset.sx) + dx;
+        const y = Number(path.dataset.sy) + dy;
+        const bundle = Number(path.dataset.bundle);
+        path.setAttribute("d", "M" + x.toFixed(1) + " " + y.toFixed(1) + " Q" + (x + (bundle - x) * 0.15).toFixed(1) + " " + (y * 0.4).toFixed(1) + " " + bundle.toFixed(1) + " 0");
+    });
+});
+
+// Let go: keep the new position and redraw the bouquet properly
+function endDrag(event) {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    drag.item.x = drag.moveX;
+    drag.item.y = drag.moveY;
+    drag = null;
+    renderPreview();
+}
+previewBox.addEventListener("pointerup", endDrag);
+previewBox.addEventListener("pointercancel", endDrag);
+
+// ---------------------------------------------------------------
+// Saving (used by "My bouquets" in build step 7)
+// ---------------------------------------------------------------
+
+// Everything needed to rebuild this bouquet, as plain data that can be saved with JSON.
+// It includes the hand-arranged positions, so a saved bouquet keeps them.
+function getBouquetData() {
+    return JSON.parse(JSON.stringify({ lilies: state.lilies, fillers: state.fillers, arrangement: state.arrangement }));
+}
+
+// The opposite: set the bouquet from saved data
+function loadBouquetData(data) {
+    LILY_TYPES.forEach(function (type) { state.lilies[type.key] = data.lilies[type.key] || 0; });
+    FILLER_TYPES.forEach(function (type) { state.fillers[type.key] = data.fillers[type.key] || 0; });
+    state.arrangement = data.arrangement || null;
+    arranging = false;
+    updatePickers();
 }
 
 // ---------------------------------------------------------------

@@ -320,3 +320,50 @@ select {
 ::placeholder {
     color: rgba(248, 241, 196, 0.75);
 }
+
+/* ---------- Arrange it yourself ---------- */
+.arrange-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: -4px 0 16px;
+}
+
+.arrange-bar .btn {
+    min-height: 44px;
+    padding: 0 18px;
+    font-size: 12px;
+}
+
+.arrange-hint {
+    margin: -6px 8px 16px;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* While arranging: a bigger picture, a brighter frame, and no page scrolling when you touch it
+   (so a finger can drag a flower). Flowers can be grabbed with their invisible circles. */
+.preview.arranging {
+    border-color: var(--cream);
+    border-width: 2px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.preview.arranging svg,
+.preview.arranging .preview-empty {
+    height: min(62vh, 400px);
+    touch-action: none;
+}
+
+.hit {
+    pointer-events: none;
+}
+
+.preview.arranging .hit,
+.preview.arranging .item {
+    pointer-events: all;
+    cursor: grab;
+}

@@ -22,6 +22,13 @@
         <!-- Small live preview of the bouquet (filled in by script.js) -->
         <div id="preview" class="preview"></div>
 
+        <!-- "Arrange it yourself": buttons and a hint (script.js shows and hides them) -->
+        <div id="arrange-bar" class="arrange-bar" hidden>
+            <button id="arrange-btn" class="btn btn-line" type="button">Arrange it yourself</button>
+            <button id="reset-btn" class="btn btn-line" type="button" hidden>Reset arrangement</button>
+        </div>
+        <p id="arrange-hint" class="arrange-hint" hidden>Drag a flower to move it. The flower you pick up comes to the front.</p>
+
         <!-- The 5 steps. Only one is shown at a time. -->
         <section class="step" data-step="1">
             <h2>Pick your lilies</h2>
