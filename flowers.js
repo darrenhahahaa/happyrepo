@@ -39,7 +39,8 @@ function makeSvg(inner, viewBox, size) {
 // One lily seen from the front, drawn from a few color options:
 //   id: short name (used for the color gradients), petal: main petal color,
 //   throat: color near the middle, stripe: color of the center stripe on each petal,
-//   spots: freckle color (or null), line: outline color (optional)
+//   spots: freckle color (or null), line: outline color (optional),
+//   headOnly: true draws just the flower head with no stem (used by the bouquet preview)
 function drawLily(o) {
     const line = o.line || shade(o.petal, -0.45);
     const outerFill = "url(#" + o.id + "-outer)";
@@ -98,21 +99,24 @@ function drawLily(o) {
             '</g>';
     }
 
+    let stemPart = '';   // stem, leaves and bud (skipped when headOnly is true)
     // stem (dark outline, then a lighter line on top)
-    s += '<path d="M50 52 C47 80 53 110 50 140" fill="none" stroke="' + LEAF_LINE + '" stroke-width="5" stroke-linecap="round"/>';
-    s += '<path d="M50 52 C47 80 53 110 50 140" fill="none" stroke="' + LEAF_GREEN + '" stroke-width="2.6" stroke-linecap="round"/>';
+    stemPart += '<path d="M50 52 C47 80 53 110 50 140" fill="none" stroke="' + LEAF_LINE + '" stroke-width="5" stroke-linecap="round"/>';
+    stemPart += '<path d="M50 52 C47 80 53 110 50 140" fill="none" stroke="' + LEAF_GREEN + '" stroke-width="2.6" stroke-linecap="round"/>';
     // leaves along the stem
-    s += leaf(50, 130, -62, 38);
-    s += leaf(51, 114, 58, 34);
-    s += leaf(49, 98, -50, 26);
+    stemPart += leaf(50, 130, -62, 38);
+    stemPart += leaf(51, 114, 58, 34);
+    stemPart += leaf(49, 98, -50, 26);
     // a closed bud on a little side stalk
-    s += '<path d="M51 120 C62 120 72 114 78 105" fill="none" stroke="' + LEAF_LINE + '" stroke-width="3.4" stroke-linecap="round"/>';
-    s += '<path d="M51 120 C62 120 72 114 78 105" fill="none" stroke="' + LEAF_GREEN + '" stroke-width="1.6" stroke-linecap="round"/>';
-    s += '<g transform="translate(78 105) rotate(28)">' +
+    stemPart += '<path d="M51 120 C62 120 72 114 78 105" fill="none" stroke="' + LEAF_LINE + '" stroke-width="3.4" stroke-linecap="round"/>';
+    stemPart += '<path d="M51 120 C62 120 72 114 78 105" fill="none" stroke="' + LEAF_GREEN + '" stroke-width="1.6" stroke-linecap="round"/>';
+    stemPart += '<g transform="translate(78 105) rotate(28)">' +
         '<ellipse cx="0" cy="-12" rx="5.4" ry="13" fill="' + innerFill + '" stroke="' + line + '" stroke-width="1.4"/>' +
         '<path d="M0 -2 C-3 -10 -3 -18 0 -25 M0 -2 C3 -10 3 -18 0 -25" fill="none" stroke="' + line + '" stroke-width="0.8" opacity="0.5"/>' +
         '<path d="M-5 -4 C-4 -1 4 -1 5 -4 C4 1 -4 1 -5 -4 Z" fill="' + LEAF_GREEN + '" stroke="' + LEAF_LINE + '" stroke-width="1"/>' +
         '</g>';
+
+    if (!o.headOnly) { s += stemPart; }
 
     // the flower head, centered at (50, 52)
     s += '<g transform="translate(50 52)">';
@@ -138,24 +142,24 @@ function drawLily(o) {
     return '<g>' + s + '</g>';
 }
 
-function drawWhiteLily() {
-    return drawLily({ id: "lily-white", petal: "#fffdf8", throat: "#f1f4c4", stripe: "#d4e29a", spots: null, line: "#b3ab9a" });
+function drawWhiteLily(options) {
+    return drawLily(Object.assign({ id: "lily-white", petal: "#fffdf8", throat: "#f1f4c4", stripe: "#d4e29a", spots: null, line: "#b3ab9a" }, options));
 }
 
-function drawStargazerLily() {
-    return drawLily({ id: "lily-stargazer", petal: "#f27fa8", throat: "#fbc9d8", stripe: "#c0306a", spots: "#a01c55" });
+function drawStargazerLily(options) {
+    return drawLily(Object.assign({ id: "lily-stargazer", petal: "#f27fa8", throat: "#fbc9d8", stripe: "#c0306a", spots: "#a01c55" }, options));
 }
 
-function drawOrangeLily() {
-    return drawLily({ id: "lily-orange", petal: "#ff9f3d", throat: "#ffd9a0", stripe: "#d9631a", spots: "#8f3a12" });
+function drawOrangeLily(options) {
+    return drawLily(Object.assign({ id: "lily-orange", petal: "#ff9f3d", throat: "#ffd9a0", stripe: "#d9631a", spots: "#8f3a12" }, options));
 }
 
-function drawYellowLily() {
-    return drawLily({ id: "lily-yellow", petal: "#ffdc4d", throat: "#fff3b0", stripe: "#e8b800", spots: null });
+function drawYellowLily(options) {
+    return drawLily(Object.assign({ id: "lily-yellow", petal: "#ffdc4d", throat: "#fff3b0", stripe: "#e8b800", spots: null }, options));
 }
 
-function drawBlushLily() {
-    return drawLily({ id: "lily-blush", petal: "#f8cfd8", throat: "#fff1ee", stripe: "#e79bb0", spots: null });
+function drawBlushLily(options) {
+    return drawLily(Object.assign({ id: "lily-blush", petal: "#f8cfd8", throat: "#fff1ee", stripe: "#e79bb0", spots: null }, options));
 }
 
 // ---------------------------------------------------------------

@@ -14,10 +14,17 @@
             <p id="step-label" class="step-label">Step 1 of 5</p>
         </header>
 
+        <!-- Small live preview of the bouquet (filled in by script.js) -->
+        <div id="preview" class="preview"></div>
+
         <!-- The 5 steps. Only one is shown at a time. -->
         <section class="step" data-step="1">
             <h2>Pick your lilies</h2>
-            <p>Lily choices will go here.</p>
+            <p class="hint">Choose how many of each color. You can have up to 18 lilies.</p>
+            <!-- One row per lily color is built by script.js -->
+            <div id="lily-list"></div>
+            <p id="lily-total" class="lily-total">Lilies: 0 of 18</p>
+            <p id="lily-message" class="lily-message">Add at least 1 lily to continue.</p>
         </section>
 
         <section class="step" data-step="2">
@@ -47,6 +54,7 @@
         </nav>
     </main>
 
+    <script src="flowers.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
